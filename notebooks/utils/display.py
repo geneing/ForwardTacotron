@@ -1,14 +1,20 @@
+import librosa
 import matplotlib.pyplot as plt
 import time, sys, math
 import numpy as np
 
+from utils.dsp import reconstruct_waveform
+
+
 def stream(string, variables) :
     sys.stdout.write(f'\r{string}' % variables)
-    
+
+
 def num_params(model) :
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
     print('Trainable Parameters: %.3f million' % parameters)
+
 
 def time_since(started) :
     elapsed = time.time() - started
@@ -21,6 +27,7 @@ def time_since(started) :
     else :
         return f'{m}m {s}s'
 
+
 def plot(array) : 
     fig = plt.figure(figsize=(30, 5))
     ax = fig.add_subplot(111)
@@ -32,9 +39,16 @@ def plot(array) :
     ax.tick_params(axis='y', colors='grey', labelsize=23)
     plt.plot(array)
 
+
 def plot_spec(M) :
     M = np.flip(M, axis=0)
     plt.figure(figsize=(18,4))
     plt.imshow(M, interpolation='nearest', aspect='auto')
     plt.show()
 
+
+def save_wav(m, path, n_iter=32, sr=22050):
+    m = (m + 4) / 8
+    np.clip(m, 0, 1, out=m)
+    wav = reconstruct_waveform(m, n_iter=n_iter)
+    librosa.output.write_wav(f'{path}.wav', wav, sr=sr)

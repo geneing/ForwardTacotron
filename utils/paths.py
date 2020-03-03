@@ -12,6 +12,7 @@ class Paths:
         self.quant = self.data/'quant'
         self.mel = self.data/'mel'
         self.gta = self.data/'gta'
+        self.alg = self.data/'alg'
 
         # WaveRNN/Vocoder Paths
         self.voc_checkpoints = self.base/'checkpoints'/f'{voc_id}.wavernn'
@@ -31,6 +32,16 @@ class Paths:
         self.tts_attention = self.tts_checkpoints/'attention'
         self.tts_mel_plot = self.tts_checkpoints/'mel_plots'
 
+        # Light/TTS Paths
+        self.light_checkpoints = self.base/'checkpoints'/f'{tts_id}.light'
+        self.light_latest_weights = self.light_checkpoints/'latest_weights.pyt'
+        self.light_latest_optim = self.light_checkpoints/'latest_optim.pyt'
+        self.light_output = self.base/'model_outputs'/f'{tts_id}.light'
+        self.light_step = self.light_checkpoints/'step.npy'
+        self.light_log = self.light_checkpoints/'log.txt'
+        self.light_attention = self.light_checkpoints/'attention'
+        self.light_mel_plot = self.light_checkpoints/'mel_plots'
+
         self.create_paths()
 
     def create_paths(self):
@@ -38,12 +49,17 @@ class Paths:
         os.makedirs(self.quant, exist_ok=True)
         os.makedirs(self.mel, exist_ok=True)
         os.makedirs(self.gta, exist_ok=True)
+        os.makedirs(self.alg, exist_ok=True)
         os.makedirs(self.voc_checkpoints, exist_ok=True)
         os.makedirs(self.voc_output, exist_ok=True)
         os.makedirs(self.tts_checkpoints, exist_ok=True)
         os.makedirs(self.tts_output, exist_ok=True)
         os.makedirs(self.tts_attention, exist_ok=True)
         os.makedirs(self.tts_mel_plot, exist_ok=True)
+        os.makedirs(self.light_checkpoints, exist_ok=True)
+        os.makedirs(self.light_output, exist_ok=True)
+        os.makedirs(self.light_attention, exist_ok=True)
+        os.makedirs(self.light_mel_plot, exist_ok=True)
 
     def get_tts_named_weights(self, name):
         """Gets the path for the weights in a named tts checkpoint."""

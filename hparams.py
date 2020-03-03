@@ -8,7 +8,7 @@ data_path = 'data/'
 # model ids are separate - that way you can use a new tts with an old wavernn and vice versa
 # NB: expect undefined behaviour if models were trained on different DSP settings
 voc_model_id = 'ljspeech_mol'
-tts_model_id = 'ljspeech_lsa_smooth_attention'
+tts_model_id = 'ljspeech_tts'
 
 # set this to True if you are only interested in WaveRNN
 ignore_tts = False
@@ -60,7 +60,8 @@ voc_target = 11_000                 # target number of samples to be generated i
 voc_overlap = 550                   # number of samples for crossfading between batches
 
 
-# TACOTRON/TTS -----------------------------------------------------------------------------------------------------#
+
+# TACOTRON AND LIGHT TTS -----------------------------------------------------------------------------------------------------#
 
 
 # Model Hparams
@@ -83,15 +84,13 @@ tts_stop_threshold = -3.4           # Value below which audio generation ends.
 
 tts_schedule = [(7,  1e-3,  10_000,  32),   # progressive training schedule
                 (5,  1e-4, 100_000,  32),   # (r, lr, step, batch_size)
-                (2,  1e-4, 180_000,  16),
-                (2,  1e-4, 350_000,  8)]
+                (1,  1e-4, 180_000,  16),
+                (1,  1e-4, 350_000,  8)]
 
 tts_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
 tts_bin_lengths = True              # bins the spectrogram lengths before sampling in data loader - speeds up training
 tts_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed
 tts_checkpoint_every = 2_000        # checkpoints the model every X steps
-# TODO: tts_phoneme_prob = 0.0              # [0 <-> 1] probability for feeding model phonemes vrs graphemes
-
 
 # ------------------------------------------------------------------------------------------------------------------#
 
