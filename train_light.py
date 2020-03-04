@@ -133,7 +133,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
 
             if step % hp.light_checkpoint_every == 0:
                 ckpt_name = f'fast_speech_step{k}K'
-                save_checkpoint('fft', paths, model, optimizer,
+                save_checkpoint('light', paths, model, optimizer,
                                 name=ckpt_name, is_silent=True)
 
             if mel_example in ids:

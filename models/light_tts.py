@@ -89,10 +89,14 @@ class LightTTS(nn.Module):
         self.embedding = nn.Embedding(num_chars, embed_dims)
         self.lr = LengthRegulator()
         self.dur_pred = DurationPredictor(embed_dims, rnn_dim=durpred_rnn_dims)
-        self.lstm = nn.LSTM(embed_dims,
-                            rnn_dim,
-                            batch_first=True,
-                            bidirectional=True)
+        self.lstm_1 = nn.LSTM(embed_dims,
+                              rnn_dim,
+                              batch_first=True,
+                              bidirectional=True)
+        self.lstm_2 = nn.LSTM(2 * rnn_dim,
+                              rnn_dim,
+                              batch_first=True,
+                              bidirectional=True)
         self.lin = torch.nn.Linear(2 * rnn_dim, n_mels)
         self.register_buffer('step', torch.zeros(1, dtype=torch.long))
         self.postnet = CBHG(K=postnet_k,
@@ -111,7 +115,8 @@ class LightTTS(nn.Module):
         dur_hat = dur_hat.squeeze()
 
         x = self.lr(x, dur)
-        x, _ = self.lstm(x)
+        x, _ = self.lstm_1(x)
+        x, _ = self.lstm_2(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
@@ -133,7 +138,8 @@ class LightTTS(nn.Module):
         dur = self.dur_pred(x, alpha=alpha)
 
         x = self.lr(x, dur)
-        x, _ = self.lstm(x)
+        x, _ = self.lstm_1(x)
+        x, _ = self.lstm_2(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
