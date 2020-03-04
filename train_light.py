@@ -102,13 +102,14 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
             x, m, dur = x.to(device), m.to(device), dur.to(device)
             # Parallelize model onto GPUS using workaround due to python bug
             if device.type == 'cuda' and torch.cuda.device_count() > 1:
-                m_hat, post, dur_hat = data_parallel_workaround(model, x, m, dur)
+                m_hat, m_post_hat, dur_hat = data_parallel_workaround(model, x, m, dur)
             else:
-                m_hat, post, dur_hat = model(x, m, dur)
+                m_hat, m_post_hat, dur_hat = model(x, m, dur)
 
-            loss = F.l1_loss(m_hat, m)
+            lin_loss = F.l1_loss(m_hat, m)
+            post_loss = F.l1_loss(m_post_hat, m)
             dur_loss = F.l1_loss(dur_hat, dur)
-            loss = loss + dur_loss
+            loss = lin_loss + post_loss + dur_loss
             optimizer.zero_grad()
 
             loss.backward()
@@ -120,7 +121,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
 
             optimizer.step()
 
-            running_loss += loss.item()
+            running_loss += post_loss.item()
             avg_loss = running_loss / i
             dur_running_loss += dur_loss.item()
             dur_avg_loss = dur_running_loss / i
@@ -146,8 +147,8 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
                 save_spectrogram(np_now(m_hat[idx]), paths.light_mel_plot/f'{step}_gta', 600)
                 save_spectrogram(np_now(m[idx]), paths.light_mel_plot/f'{step}_target', 600)
 
-            msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Loss: {avg_loss:#.4} ' \
-                  f'| dur Loss: {dur_avg_loss:#.4} | {speed:#.2} steps/s | Step: {k}k | '
+            msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Mel Loss: {avg_loss:#.4} ' \
+                  f'| Duration Loss: {dur_avg_loss:#.4} | {speed:#.2} steps/s | Step: {k}k | '
             stream(msg)
         model.log(paths.light_log, msg)
 
