@@ -99,6 +99,7 @@ tts_checkpoint_every = 2_000        # checkpoints the model every X steps
 # Model Hparams
 light_embed_dims = 256                # embedding dimension for the graphemes/phoneme inputs
 light_postnet_dims = 256
+light_durpred_conv_dims = 256
 light_durpred_rnn_dims = 64
 light_postnet_K = 8
 light_rnn_dims = 512

@@ -42,15 +42,21 @@ class LengthRegulator(nn.Module):
 
 class DurationPredictor(nn.Module):
 
-    def __init__(self, in_dim, rnn_dim=64):
+    def __init__(self, in_dims, conv_dims=256, rnn_dims=64):
         super().__init__()
-        self.rnn = nn.GRU(in_dim,
-                          rnn_dim,
-                          batch_first=True,
-                          bidirectional=True)
-        self.lin = nn.Linear(2 * rnn_dim, 1)
+        self.convs = torch.nn.ModuleList([
+            BatchNormConv(in_dims, conv_dims, 5, activation=torch.relu),
+            BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
+            BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
+        ])
+        self.rnn = nn.GRU(conv_dims, rnn_dims, batch_first=True, bidirectional=True)
+        self.lin = nn.Linear(2 * rnn_dims, 1)
 
     def forward(self, x, alpha=1.0):
+        x = x.transpose(1, 2)
+        for conv in self.convs:
+            x = conv(x)
+        x = x.transpose(1, 2)
         x, _ = self.rnn(x)
         x = self.lin(x)
         return x / alpha
@@ -77,6 +83,7 @@ class LightTTS(nn.Module):
     def __init__(self,
                  embed_dims,
                  num_chars,
+                 durpred_conv_dims,
                  durpred_rnn_dims,
                  rnn_dim,
                  postnet_k,
@@ -88,7 +95,9 @@ class LightTTS(nn.Module):
         self.rnn_dim = rnn_dim
         self.embedding = nn.Embedding(num_chars, embed_dims)
         self.lr = LengthRegulator()
-        self.dur_pred = DurationPredictor(embed_dims, rnn_dim=durpred_rnn_dims)
+        self.dur_pred = DurationPredictor(embed_dims,
+                                          conv_dims=durpred_conv_dims,
+                                          rnn_dims=durpred_rnn_dims)
         self.lstm_1 = nn.LSTM(embed_dims,
                               rnn_dim,
                               batch_first=True,
