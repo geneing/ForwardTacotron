@@ -41,7 +41,7 @@ def main():
     if not args.force_cpu and torch.cuda.is_available():
         device = torch.device('cuda')
         for session in hp.light_schedule:
-            _, _, _, batch_size = session
+            _, _, batch_size = session
             if batch_size % torch.cuda.device_count() != 0:
                 raise ValueError('`batch_size` must be evenly divisible by n_gpus!')
     else:
