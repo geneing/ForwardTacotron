@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 import time
 import numpy as np
-import sys
 from utils.checkpoints import save_checkpoint, restore_checkpoint
 
 

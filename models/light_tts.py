@@ -42,22 +42,18 @@ class LengthRegulator(nn.Module):
 
 class DurationPredictor(nn.Module):
 
-    def __init__(self, in_dim, conv_dim=256):
+    def __init__(self, in_dim, rnn_dim=64):
         super().__init__()
-        self.convs = torch.nn.ModuleList([
-            BatchNormConv(in_dim, conv_dim, 5, activation=torch.relu),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu),
-        ])
-        self.lin = nn.Linear(conv_dim, 1)
+        self.rnn = nn.GRU(in_dim,
+                          rnn_dim,
+                          batch_first=True,
+                          bidirectional=True)
+        self.lin = nn.Linear(2 * rnn_dim, 1)
 
     def forward(self, x, alpha=1.0):
-        x = x.transpose(1, 2)
-        for conv in self.convs:
-            x = conv(x)
-        x = x.transpose(1, 2)
+        x, _ = self.rnn(x)
         x = self.lin(x)
-        return x * alpha
+        return x / alpha
 
 
 class BatchNormConv(nn.Module):
@@ -76,69 +72,37 @@ class BatchNormConv(nn.Module):
         return x
 
 
-class Postnet(nn.Module):
-
-    def __init__(self, in_dim, conv_dim, mels):
-        super().__init__()
-        self.lin = torch.nn.Linear(in_dim, mels)
-        self.convs = torch.nn.ModuleList([
-            BatchNormConv(in_dim, conv_dim, 5, activation=torch.tanh),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh),
-            BatchNormConv(conv_dim, mels, 5),
-        ])
-
-    def forward(self, x):
-        for conv in self.convs:
-            x = conv(x)
-            x = F.dropout(x, training=self.training)
-        return x
-
-
 class LightTTS(nn.Module):
 
     def __init__(self,
                  embed_dims,
                  num_chars,
-                 lstm_dims,
-                 prenet_k,
-                 prenet_dims,
+                 durpred_rnn_dims,
+                 rnn_dim,
                  postnet_k,
                  postnet_dims,
-                 num_highways,
+                 postnet_highways,
                  n_mels=80):
-        super().__init__()
-        self._to_flatten = []
-        self.lstm_dims = lstm_dims
 
+        super().__init__()
+        self.rnn_dim = rnn_dim
         self.embedding = nn.Embedding(num_chars, embed_dims)
-        self.prenet = CBHG(K=prenet_k,
-                           in_channels=embed_dims,
-                           channels=prenet_dims,
-                           proj_channels=[prenet_dims, embed_dims],
-                           num_highways=num_highways)
         self.lr = LengthRegulator()
-        self.dur_pred = DurationPredictor(embed_dims, num_chars)
-        self.lstm = nn.LSTM(2 * embed_dims,
-                            lstm_dims,
+        self.dur_pred = DurationPredictor(embed_dims, rnn_dim=durpred_rnn_dims)
+        self.lstm = nn.LSTM(embed_dims,
+                            rnn_dim,
                             batch_first=True,
                             bidirectional=True)
-        self._to_flatten.append(self.lstm)
-        self.lin = torch.nn.Linear(2 * lstm_dims, n_mels)
+        self.lin = torch.nn.Linear(2 * rnn_dim, n_mels)
         self.register_buffer('step', torch.zeros(1, dtype=torch.long))
         self.postnet = CBHG(K=postnet_k,
                             in_channels=n_mels,
                             channels=postnet_dims,
                             proj_channels=[postnet_dims, n_mels],
-                            num_highways=num_highways)
+                            num_highways=postnet_highways)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
-        # Avoid fragmentation of RNN parameters and associated warning
-        self._flatten_parameters()
-
     def forward(self, x, mel, dur):
-        self._flatten_parameters()
         self.train()
         self.step += 1
 
@@ -146,8 +110,6 @@ class LightTTS(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        x = x.transpose(1, 2)
-        x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
         x = self.lin(x)
@@ -170,8 +132,6 @@ class LightTTS(nn.Module):
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
 
-        x = x.transpose(1, 2)
-        x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
         x = self.lin(x)
@@ -209,7 +169,3 @@ class LightTTS(nn.Module):
         with open(path, 'a') as f:
             print(msg, file=f)
 
-    def _flatten_parameters(self):
-        """Calls `flatten_parameters` on all the rnns used by the WaveRNN. Used
-        to improve efficiency and avoid PyTorch yelling at us."""
-        [m.flatten_parameters() for m in self._to_flatten]

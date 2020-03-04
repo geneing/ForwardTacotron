@@ -3,22 +3,10 @@ import traceback
 from torch import optim, nn
 import torch.nn.functional as F
 
-from models.fast_speech_cbhg import FastSpeechCBHG
-from models.fast_speech_cbhg_lstm import FastSpeechCbhgLstm
-from models.fast_speech_conv import FastSpeechConv
-from models.fast_speech_gru import FastSpeechGru
-from models.fast_speech import FastSpeech
-from models.fast_speech_lstm import FastSpeechLstm
-from models.fast_speech_lstm_cbhg import FastSpeechLstmCbhg
-from models.fast_speech_lstm_post_old import FastSpeechLstmPost
-
 from models.light_tts import LightTTS
-from notebooks.utils.display import save_wav
 from utils import hparams as hp
-from utils.display import *
 from utils.dataset import get_tts_datasets
-from utils.dur_dataset import get_dur_datasets
-from utils.text import sequence_to_text
+from utils.display import *
 from utils.text.symbols import symbols
 from utils.paths import Paths
 from models.tacotron import Tacotron
@@ -45,13 +33,14 @@ def main():
     args = parser.parse_args()
 
     hp.configure(args.hp_file)  # Load hparams from file
+
     paths = Paths(hp.data_path, hp.voc_model_id, hp.tts_model_id)
 
     force_gta = args.force_gta
 
     if not args.force_cpu and torch.cuda.is_available():
         device = torch.device('cuda')
-        for session in hp.tts_schedule:
+        for session in hp.light_schedule:
             _, _, _, batch_size = session
             if batch_size % torch.cuda.device_count() != 0:
                 raise ValueError('`batch_size` must be evenly divisible by n_gpus!')
@@ -61,39 +50,39 @@ def main():
 
     # Instantiate Light TTS Model
     print('\nInitialising Light TTS Model...\n')
-    model = LightTTS(embed_dims=hp.tts_embed_dims,
+    model = LightTTS(embed_dims=hp.light_embed_dims,
                      num_chars=len(symbols),
-                     n_mels=hp.num_mels,
-                     postnet_dims=hp.tts_postnet_dims,
-                     prenet_k=hp.tts_encoder_K,
-                     lstm_dims=hp.tts_lstm_dims,
-                     postnet_k=hp.tts_postnet_K,
-                     num_highways=hp.tts_num_highways).to(device)
+                     durpred_rnn_dims=hp.light_durpred_rnn_dims,
+                     rnn_dim=hp.light_rnn_dims,
+                     postnet_k=hp.light_postnet_K,
+                     postnet_dims=hp.light_postnet_dims,
+                     postnet_highways=hp.light_num_highways,
+                     n_mels=hp.num_mels).to(device)
 
     optimizer = optim.Adam(model.parameters())
-    restore_checkpoint('fft', paths, model, optimizer, create_if_missing=True)
+    restore_checkpoint('light', paths, model, optimizer, create_if_missing=True)
 
     if not force_gta:
-        for i, session in enumerate(hp.tts_schedule):
+        for i, session in enumerate(hp.light_schedule):
             current_step = model.get_step()
 
-            r, lr, max_step, batch_size = session
+            lr, max_step, batch_size = session
 
             training_steps = max_step - current_step
 
-            simple_table([(f'Steps with r={r}', str(training_steps//1000) + 'k Steps'),
+            simple_table([(f'Steps with r=1', str(training_steps//1000) + 'k Steps'),
                           ('Batch Size', batch_size),
                           ('Learning Rate', lr)])
 
-            train_set, attn_example = get_dur_datasets(paths.data, batch_size, r)
-            train_loop(paths, model, optimizer, train_set, lr, training_steps, attn_example)
+            train_set, mel_example = get_tts_datasets(paths.data, batch_size, 1, alignments=True)
+            train_loop(paths, model, optimizer, train_set, lr, training_steps, mel_example)
 
-    train_set, attn_example = get_dur_datasets(paths.data, 8, 1)
+    train_set, mel_example = get_tts_datasets(paths.data, 8, 1)
     create_gta_features(model, train_set, paths.gta)
     print('Training Complete.')
 
 
-def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, attn_example):
+def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_example):
     device = next(model.parameters()).device  # use same device as model parameters
 
     for g in optimizer.param_groups: g['lr'] = lr
@@ -124,8 +113,8 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, attn_
 
             loss.backward()
 
-            if hp.tts_clip_grad_norm is not None:
-                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hp.tts_clip_grad_norm)
+            if hp.light_clip_grad_norm is not None:
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hp.light_clip_grad_norm)
                 if np.isnan(grad_norm):
                     print('grad_norm was NaN!')
 
@@ -141,13 +130,13 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, attn_
             step = model.get_step()
             k = step // 1000
 
-            if step % hp.tts_checkpoint_every == 0:
+            if step % hp.light_checkpoint_every == 0:
                 ckpt_name = f'fast_speech_step{k}K'
                 save_checkpoint('fft', paths, model, optimizer,
                                 name=ckpt_name, is_silent=True)
 
-            if attn_example in ids and e > 1:
-                idx = ids.index(attn_example)
+            if mel_example in ids:
+                idx = ids.index(mel_example)
                 try:
                     seq = x[idx].tolist()
                     m_gen = model.generate(seq)
@@ -158,7 +147,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, attn_
                 save_spectrogram(np_now(m[idx]), paths.light_mel_plot/f'{step}_target', 600)
 
             msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Loss: {avg_loss:#.4} ' \
-                  f'| Dur Loss: {dur_avg_loss:#.4} | {speed:#.2} steps/s | Step: {k}k | '
+                  f'| dur Loss: {dur_avg_loss:#.4} | {speed:#.2} steps/s | Step: {k}k | '
             stream(msg)
         model.log(paths.light_log, msg)
 

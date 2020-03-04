@@ -61,8 +61,7 @@ voc_overlap = 550                   # number of samples for crossfading between 
 
 
 
-# TACOTRON AND LIGHT TTS -----------------------------------------------------------------------------------------------------#
-
+# TACOTRON TTS -----------------------------------------------------------------------------------------------------#
 
 # Model Hparams
 tts_embed_dims = 256                # embedding dimension for the graphemes/phoneme inputs
@@ -88,9 +87,32 @@ tts_schedule = [(7,  1e-3,  10_000,  32),   # progressive training schedule
                 (1,  1e-4, 350_000,  8)]
 
 tts_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
-tts_bin_lengths = True              # bins the spectrogram lengths before sampling in data loader - speeds up training
 tts_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed
 tts_checkpoint_every = 2_000        # checkpoints the model every X steps
+
+# ------------------------------------------------------------------------------------------------------------------#
+
+
+# LIGHT TTS -----------------------------------------------------------------------------------------------------#
+
+
+# Model Hparams
+light_embed_dims = 256                # embedding dimension for the graphemes/phoneme inputs
+light_postnet_dims = 16
+light_durpred_rnn_dims = 16
+light_postnet_K = 8
+light_rnn_dims = 16
+light_num_highways = 1
+light_cleaner_names = ['english_cleaners']
+
+# Training
+
+light_schedule = [(1e-4, 100_000,  32),    # progressive training schedule
+                  (1e-4, 500_000,  32)]    # (lr, step, batch_size)
+
+light_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
+light_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed
+light_checkpoint_every = 2_000        # checkpoints the model every X steps
 
 # ------------------------------------------------------------------------------------------------------------------#
 
