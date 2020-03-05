@@ -69,7 +69,7 @@ def main():
 
             training_steps = max_step - current_step
 
-            simple_table([(f'Steps with r=1', str(training_steps//1000) + 'k Steps'),
+            simple_table([(f'Steps', str(training_steps//1000) + 'k Steps'),
                           ('Batch Size', batch_size),
                           ('Learning Rate', lr)])
 
