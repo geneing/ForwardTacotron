@@ -96,6 +96,7 @@ if __name__ == "__main__":
     print('\nInitialising Light TTS Model...\n')
     tts_model = LightTTS(embed_dims=hp.light_embed_dims,
                          num_chars=len(symbols),
+                         durpred_conv_dims=hp.light_durpred_conv_dims,
                          durpred_rnn_dims=hp.light_durpred_rnn_dims,
                          rnn_dim=hp.light_rnn_dims,
                          postnet_k=hp.light_postnet_K,

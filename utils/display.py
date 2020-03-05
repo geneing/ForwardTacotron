@@ -119,3 +119,13 @@ def plot_spec(M):
     plt.show()
     mpl.interactive(False)
 
+
+def time_it(f):
+    def apply_func(*args, **kwargs):
+        t_start = time.time()
+        result = f(*args, **kwargs)
+        t_end = time.time()
+        dur = round(t_end - t_start, ndigits=2)
+        print(f'{f} took {dur}s')
+        return result
+    return apply_func

@@ -12,11 +12,9 @@ from utils.paths import Paths
 from models.tacotron import Tacotron
 import argparse
 from utils import data_parallel_workaround
-import os
 from pathlib import Path
 import time
 import numpy as np
-import sys
 from utils.checkpoints import save_checkpoint, restore_checkpoint
 
 
@@ -167,7 +165,7 @@ def create_gta_features(model: Tacotron, train_set, save_path: Path):
 
         x, mels, dur = x.to(device), mels.to(device), dur.to(device)
 
-        with torch.no_grad(): gta, _, _ = model(x, mels, dur)
+        with torch.no_grad(): _, gta, _ = model(x, mels, dur)
 
         gta = gta.cpu().numpy()
 

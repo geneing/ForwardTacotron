@@ -1,11 +1,13 @@
 from pathlib import Path
 from typing import Union
 
+
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
 from models.tacotron import CBHG
+from utils.display import time_it
 
 
 class LengthRegulator(nn.Module):
@@ -34,7 +36,7 @@ class LengthRegulator(nn.Module):
         output = []
         max_len = max([x[i].size(0) for i in range(len(x))])
         for i, seq in enumerate(x):
-            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], "constant", 0.0)
+            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], 'constant', 0.0)
             output.append(padded)
         output = torch.stack(output)
         return output
@@ -123,8 +125,8 @@ class LightTTS(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        x = self.lr(x, dur)
         x, _ = self.lstm_1(x)
+        x = self.lr(x, dur)
         x, _ = self.lstm_2(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
@@ -138,6 +140,7 @@ class LightTTS(nn.Module):
 
         return x, x_post, dur_hat
 
+    @time_it
     def generate(self, x, alpha=1.0):
         self.eval()
         device = next(self.parameters()).device  # use same device as parameters
@@ -146,8 +149,8 @@ class LightTTS(nn.Module):
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
 
-        x = self.lr(x, dur)
         x, _ = self.lstm_1(x)
+        x = self.lr(x, dur)
         x, _ = self.lstm_2(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
