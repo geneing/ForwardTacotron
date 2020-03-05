@@ -108,8 +108,8 @@ light_cleaner_names = ['english_cleaners']
 
 # Training
 
-light_schedule = [(1e-4, 100_000,  8),    # progressive training schedule
-                  (1e-4, 500_000,  8)]    # (lr, step, batch_size)
+light_schedule = [(1e-4, 100_000,  32),    # progressive training schedule
+                  (1e-4, 500_000,  32)]    # (lr, step, batch_size)
 
 light_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
 light_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed

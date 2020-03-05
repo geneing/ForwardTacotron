@@ -31,7 +31,7 @@ def get_tts_datasets(path: Path, batch_size, r, alignments=False):
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_tts(batch, r),
                            batch_size=batch_size,
-                           sampler=None,
+                           sampler=sampler,
                            num_workers=1,
                            pin_memory=True)
 
