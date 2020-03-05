@@ -143,7 +143,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
                     save_spectrogram(m_gen, paths.light_mel_plot / f'{step}_gen', 600)
                 except Exception:
                     traceback.print_exc()
-                save_spectrogram(np_now(m_hat[idx]), paths.light_mel_plot/f'{step}_gta', 600)
+                save_spectrogram(np_now(m_post_hat[idx]), paths.light_mel_plot/f'{step}_gta', 600)
                 save_spectrogram(np_now(m[idx]), paths.light_mel_plot/f'{step}_target', 600)
 
             msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Mel Loss: {avg_loss:#.4} ' \
