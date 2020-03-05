@@ -108,7 +108,7 @@ light_cleaner_names = ['english_cleaners']
 
 # Training
 
-light_schedule = [(1e-4, 100_000,  32),    # progressive training schedule
+light_schedule = [(1e-3, 100_000,  32),    # progressive training schedule
                   (1e-4, 500_000,  32)]    # (lr, step, batch_size)
 
 light_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
