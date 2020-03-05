@@ -135,8 +135,6 @@ if __name__ == "__main__":
         print(f'\n| Generating {i}/{len(inputs)}')
         m = tts_model.generate(x, alpha=args.alpha)
 
-        print(m.shape)
-
         # Fix mel spectrogram scaling to be from 0 to 1
         m = (m + 4) / 8
         np.clip(m, 0, 1, out=m)
