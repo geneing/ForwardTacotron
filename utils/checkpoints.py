@@ -1,6 +1,5 @@
 import torch
 from utils.paths import Paths
-from models.tacotron import Tacotron
 
 
 def get_checkpoint_paths(checkpoint_type: str, paths: Paths):
@@ -15,7 +14,11 @@ def get_checkpoint_paths(checkpoint_type: str, paths: Paths):
     if checkpoint_type is 'tts':
         weights_path = paths.tts_latest_weights
         optim_path = paths.tts_latest_optim
-        checkpoint_path = paths.tts_checkpoints
+        checkpoint_path = paths.tts_checkpoints    
+    elif checkpoint_type is 'light':
+        weights_path = paths.light_latest_weights
+        optim_path = paths.light_latest_optim
+        checkpoint_path = paths.light_checkpoints
     elif checkpoint_type is 'voc':
         weights_path = paths.voc_latest_weights
         optim_path = paths.voc_latest_optim

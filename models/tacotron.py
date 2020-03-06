@@ -197,8 +197,8 @@ class LSA(nn.Module):
         u = u.squeeze(-1)
 
         # Smooth Attention
-        scores = torch.sigmoid(u) / torch.sigmoid(u).sum(dim=1, keepdim=True)
-        # scores = F.softmax(u, dim=1)
+        #scores = torch.sigmoid(u) / torch.sigmoid(u).sum(dim=1, keepdim=True)
+        scores = F.softmax(u, dim=1)
         self.attention = scores
         self.cumulative += self.attention
 

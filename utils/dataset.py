@@ -1,13 +1,12 @@
 import pickle
-import random
 import torch
-from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.sampler import Sampler
+from torch.utils.data import Dataset, DataLoader
 from utils.dsp import *
 from utils import hparams as hp
 from utils.text import text_to_sequence
-from utils.paths import Paths
 from pathlib import Path
+import random
 
 
 ###################################################################################
@@ -98,7 +97,7 @@ def collate_vocoder(batch):
 ###################################################################################
 
 
-def get_tts_datasets(path: Path, batch_size, r):
+def get_tts_datasets(path: Path, batch_size, r, alignments=False):
 
     with open(path/'dataset.pkl', 'rb') as f:
         dataset = pickle.load(f)
@@ -114,12 +113,9 @@ def get_tts_datasets(path: Path, batch_size, r):
     with open(path/'text_dict.pkl', 'rb') as f:
         text_dict = pickle.load(f)
 
-    train_dataset = TTSDataset(path, dataset_ids, text_dict)
+    train_dataset = TTSDataset(path, dataset_ids, text_dict, alignments=alignments)
 
-    sampler = None
-
-    if hp.tts_bin_lengths:
-        sampler = BinnedLengthSampler(mel_lengths, batch_size, batch_size * 3)
+    sampler = BinnedLengthSampler(mel_lengths, batch_size, batch_size * 3)
 
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_tts(batch, r),
@@ -134,22 +130,28 @@ def get_tts_datasets(path: Path, batch_size, r):
     attn_example = dataset_ids[longest]
 
     # print(attn_example)
-
     return train_set, attn_example
 
 
 class TTSDataset(Dataset):
-    def __init__(self, path: Path, dataset_ids, text_dict):
+
+    def __init__(self, path: Path, dataset_ids, text_dict, alignments=False):
         self.path = path
         self.metadata = dataset_ids
         self.text_dict = text_dict
+        self.alignments = alignments
 
     def __getitem__(self, index):
         item_id = self.metadata[index]
         x = text_to_sequence(self.text_dict[item_id], hp.tts_cleaner_names)
         mel = np.load(self.path/'mel'/f'{item_id}.npy')
         mel_len = mel.shape[-1]
-        return x, mel, item_id, mel_len
+        if self.alignments:
+            dur = np.load(self.path/'alg'/f'{item_id}.npy')
+        else:
+            # dummy durations to simplify collate func
+            dur = np.zeros((mel.shape[0], 1))
+        return x, mel, item_id, mel_len, dur
 
     def __len__(self):
         return len(self.metadata)
@@ -157,7 +159,6 @@ class TTSDataset(Dataset):
 
 def pad1d(x, max_len):
     return np.pad(x, (0, max_len - len(x)), mode='constant')
-
 
 def pad2d(x, max_len):
     return np.pad(x, ((0, 0), (0, max_len - x.shape[-1])), mode='constant')
@@ -179,15 +180,19 @@ def collate_tts(batch, r):
     mel = [pad2d(x[1], max_spec_len) for x in batch]
     mel = np.stack(mel)
 
+    dur = [pad1d(x[4][:max_x_len], max_x_len) for x in batch]
+    dur = np.stack(dur)
+
     ids = [x[2] for x in batch]
     mel_lens = [x[3] for x in batch]
 
     chars = torch.tensor(chars).long()
     mel = torch.tensor(mel)
+    dur = torch.tensor(dur).float()
 
     # scale spectrograms to -4 <--> 4
     mel = (mel * 8.) - 4.
-    return chars, mel, ids, mel_lens
+    return chars, mel, ids, mel_lens, dur
 
 
 class BinnedLengthSampler(Sampler):
