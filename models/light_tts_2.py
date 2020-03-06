@@ -56,7 +56,7 @@ class DurationPredictor(nn.Module):
         x = x.transpose(1, 2)
         for conv in self.convs:
             x = conv(x)
-            x = F.dropout(x, p=0.5, training=self.training)
+            x = F.dropout(x, p=0.1, training=self.training)
         x = x.transpose(1, 2)
         x, _ = self.rnn(x)
         x = self.lin(x)
