@@ -54,7 +54,10 @@ def main():
                      rnn_dim=hp.light_rnn_dims,
                      postnet_k=hp.light_postnet_K,
                      postnet_dims=hp.light_postnet_dims,
-                     postnet_highways=hp.light_num_highways,
+                     prenet_k=16,
+                     prenet_dims=256,
+                     durpred_rnn_dims=64,
+                     highways=hp.light_num_highways,
                      n_mels=hp.num_mels).to(device)
 
     optimizer = optim.Adam(model.parameters())
