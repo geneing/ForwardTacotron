@@ -201,7 +201,7 @@ def create_align_features(model: Tacotron, train_set, save_path: Path):
                          f'Reduction factor was: {model.r}'
     device = next(model.parameters()).device  # use same device as model parameters
     iters = len(train_set)
-    for i, (x, mels, ids, mel_lens) in enumerate(train_set, 1):
+    for i, (x, mels, ids, mel_lens, _) in enumerate(train_set, 1):
         x, mels = x.to(device), mels.to(device)
         with torch.no_grad():
             _, _, attn = model(x, mels)
