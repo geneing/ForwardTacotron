@@ -3,7 +3,7 @@ import traceback
 from torch import optim, nn
 import torch.nn.functional as F
 
-from models.light_tts import LightTTS
+from models.light_tts_3 import LightTTS
 from utils import hparams as hp
 from utils.dataset import get_tts_datasets
 from utils.display import *
@@ -51,7 +51,6 @@ def main():
     model = LightTTS(embed_dims=hp.light_embed_dims,
                      num_chars=len(symbols),
                      durpred_conv_dims=hp.light_durpred_conv_dims,
-                     durpred_rnn_dims=hp.light_durpred_rnn_dims,
                      rnn_dim=hp.light_rnn_dims,
                      postnet_k=hp.light_postnet_K,
                      postnet_dims=hp.light_postnet_dims,

@@ -100,9 +100,9 @@ if __name__ == "__main__":
                          durpred_rnn_dims=hp.light_durpred_rnn_dims,
                          rnn_dim=hp.light_rnn_dims,
                          postnet_k=hp.light_postnet_K,
-                         prenet_k=16,
-                         prenet_dims=256,
                          postnet_dims=hp.light_postnet_dims,
+                         prenet_dims=256,
+                         prenet_k=16,
                          highways=hp.light_num_highways,
                          n_mels=hp.num_mels).to(device)
 
