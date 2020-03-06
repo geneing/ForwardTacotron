@@ -76,7 +76,7 @@ def main():
             train_set, mel_example = get_tts_datasets(paths.data, batch_size, 1, alignments=True)
             train_loop(paths, model, optimizer, train_set, lr, training_steps, mel_example)
 
-    train_set, mel_example = get_tts_datasets(paths.data, 8, 1)
+    train_set, mel_example = get_tts_datasets(paths.data, 8, 1, alignments=True)
     create_gta_features(model, train_set, paths.gta)
     print('Training Complete.')
 

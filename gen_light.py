@@ -1,7 +1,7 @@
 import torch
 
 from models.fatchord_version import WaveRNN
-from models.light_tts import LightTTS
+from models.light_tts_2 import LightTTS
 from utils import hparams as hp
 from utils.text.symbols import symbols
 from utils.paths import Paths
@@ -100,8 +100,10 @@ if __name__ == "__main__":
                          durpred_rnn_dims=hp.light_durpred_rnn_dims,
                          rnn_dim=hp.light_rnn_dims,
                          postnet_k=hp.light_postnet_K,
+                         prenet_k=16,
+                         prenet_dims=256,
                          postnet_dims=hp.light_postnet_dims,
-                         postnet_highways=hp.light_num_highways,
+                         highways=hp.light_num_highways,
                          n_mels=hp.num_mels).to(device)
 
     tts_load_path = tts_weights if tts_weights else paths.light_latest_weights
