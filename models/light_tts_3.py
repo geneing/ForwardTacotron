@@ -51,7 +51,7 @@ class DurationPredictor(nn.Module):
             BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
             BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
         ])
-        self.lin = nn.Linear(2 * rnn_dims, 1)
+        self.lin = nn.Linear(conv_dims, 1)
 
     def forward(self, x, alpha=1.0):
         x = x.transpose(1, 2)
