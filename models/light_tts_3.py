@@ -1,13 +1,11 @@
 from pathlib import Path
 from typing import Union
 
-
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
 from models.tacotron import CBHG
-from utils.display import time_it
 
 
 class LengthRegulator(nn.Module):
@@ -27,9 +25,8 @@ class LengthRegulator(nn.Module):
         output = []
         for i, frame in enumerate(x):
             expanded_len = int(dur[i] + 0.5)
-            if expanded_len > 0:
-                expanded = frame.expand(expanded_len, -1)
-                output.append(expanded)
+            expanded = frame.expand(expanded_len, -1)
+            output.append(expanded)
         output = torch.cat(output, 0)
         return output
 
@@ -37,7 +34,7 @@ class LengthRegulator(nn.Module):
         output = []
         max_len = max([x[i].size(0) for i in range(len(x))])
         for i, seq in enumerate(x):
-            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], 'constant', 0.0)
+            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], "constant", 0.0)
             output.append(padded)
         output = torch.stack(output)
         return output
@@ -54,7 +51,7 @@ class DurationPredictor(nn.Module):
             BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
             BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
         ])
-        self.lin = nn.Linear(conv_dims, 1)
+        self.lin = nn.Linear(2 * rnn_dims, 1)
 
     def forward(self, x, alpha=1.0):
         x = x.transpose(1, 2)
@@ -88,9 +85,11 @@ class LightTTS(nn.Module):
                  num_chars,
                  durpred_conv_dims,
                  rnn_dim,
+                 prenet_k,
+                 prenet_dims,
                  postnet_k,
                  postnet_dims,
-                 postnet_highways,
+                 highways,
                  n_mels=80):
 
         super().__init__()
@@ -99,21 +98,22 @@ class LightTTS(nn.Module):
         self.lr = LengthRegulator()
         self.dur_pred = DurationPredictor(embed_dims,
                                           conv_dims=durpred_conv_dims)
-        self.lstm_1 = nn.LSTM(embed_dims,
-                              rnn_dim,
-                              batch_first=True,
-                              bidirectional=True)
-        self.lstm_2 = nn.LSTM(2 * rnn_dim,
-                              rnn_dim,
-                              batch_first=True,
-                              bidirectional=True)
+        self.prenet = CBHG(K=prenet_k,
+                           in_channels=embed_dims,
+                           channels=prenet_dims,
+                           proj_channels=[prenet_dims, embed_dims],
+                           num_highways=highways)
+        self.lstm = nn.LSTM(2 * prenet_dims,
+                            rnn_dim,
+                            batch_first=True,
+                            bidirectional=True)
         self.lin = torch.nn.Linear(2 * rnn_dim, n_mels)
         self.register_buffer('step', torch.zeros(1, dtype=torch.long))
         self.postnet = CBHG(K=postnet_k,
                             in_channels=n_mels,
                             channels=postnet_dims,
                             proj_channels=[postnet_dims, n_mels],
-                            num_highways=postnet_highways)
+                            num_highways=highways)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
@@ -124,9 +124,10 @@ class LightTTS(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        x, _ = self.lstm_1(x)
+        x = x.transpose(1, 2)
+        x = self.prenet(x)
         x = self.lr(x, dur)
-        x, _ = self.lstm_2(x)
+        x, _ = self.lstm(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
@@ -139,7 +140,6 @@ class LightTTS(nn.Module):
 
         return x, x_post, dur_hat
 
-    @time_it
     def generate(self, x, alpha=1.0):
         self.eval()
         device = next(self.parameters()).device  # use same device as parameters
@@ -148,9 +148,10 @@ class LightTTS(nn.Module):
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
 
-        x, _ = self.lstm_1(x)
+        x = x.transpose(1, 2)
+        x = self.prenet(x)
         x = self.lr(x, dur)
-        x, _ = self.lstm_2(x)
+        x, _ = self.lstm(x)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
