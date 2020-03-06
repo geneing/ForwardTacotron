@@ -130,6 +130,7 @@ class LightTTS(nn.Module):
         x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
+        x = F.dropout(x, p=0.5, training=self.training)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
@@ -154,6 +155,7 @@ class LightTTS(nn.Module):
         x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
+        x = F.dropout(x, p=0.5, training=self.training)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
