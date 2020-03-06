@@ -54,11 +54,15 @@ def main():
                      rnn_dim=hp.light_rnn_dims,
                      postnet_k=hp.light_postnet_K,
                      postnet_dims=hp.light_postnet_dims,
-                     prenet_k=16,
-                     prenet_dims=256,
+                     prenet_k=8,
+                     prenet_dims=128,
                      durpred_rnn_dims=64,
                      highways=hp.light_num_highways,
                      n_mels=hp.num_mels).to(device)
+
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(f'num params {params}')
 
     optimizer = optim.Adam(model.parameters())
     restore_checkpoint('light', paths, model, optimizer, create_if_missing=True)

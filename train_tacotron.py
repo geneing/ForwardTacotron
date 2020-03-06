@@ -62,6 +62,11 @@ def main():
                      dropout=hp.tts_dropout,
                      stop_threshold=hp.tts_stop_threshold).to(device)
 
+
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(f'num params {params}')
+
     optimizer = optim.Adam(model.parameters())
     restore_checkpoint('tts', paths, model, optimizer, create_if_missing=True)
 
