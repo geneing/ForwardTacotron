@@ -5,40 +5,45 @@ from models.forward_tacotron import ForwardTacotron
 from utils.text.symbols import symbols
 from utils.text import text_to_sequence
 from utils.dsp import reconstruct_waveform
+from utils import hparams as hp
 import numpy as np
 
 
-def get_forward_model(model_path,):
+def init_hparams(hp_file):
+    hp.configure(hp_file)
+
+
+def get_forward_model(model_path):
     device = torch.device('cuda')
-    model = ForwardTacotron(embed_dims=256,
+    model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
                             num_chars=len(symbols),
-                            durpred_rnn_dims=64,
-                            durpred_conv_dims=256,
-                            rnn_dim=512,
-                            postnet_k=8,
-                            postnet_dims=256,
-                            prenet_k=16,
-                            prenet_dims=256,
-                            highways=4,
-                            n_mels=80).to(device)
+                            durpred_rnn_dims=hp.forward_durpred_rnn_dims,
+                            durpred_conv_dims=hp.forward_durpred_conv_dims,
+                            rnn_dim=hp.forward_rnn_dims,
+                            postnet_k=hp.forward_postnet_K,
+                            postnet_dims=hp.forward_postnet_dims,
+                            prenet_k=hp.forward_prenet_K,
+                            prenet_dims=hp.forward_prenet_dims,
+                            highways=hp.forward_num_highways,
+                            n_mels=hp.num_mels).to(device)
     model.load(model_path)
     return model
 
 
 def get_wavernn_model(model_path):
     device = torch.device('cuda')
-    model = WaveRNN(rnn_dims=512,
-                    fc_dims=512,
-                    bits=9,
-                    pad=2,
-                    upsample_factors=(5, 5, 11),
-                    feat_dims=80,
-                    compute_dims=128,
-                    res_out_dims=128,
-                    res_blocks=10,
-                    hop_length=275,
-                    sample_rate=22050,
-                    mode='MOL').to(device)
+    model = WaveRNN(rnn_dims=hp.voc_rnn_dims,
+                    fc_dims=hp.voc_fc_dims,
+                    bits=hp.bits,
+                    pad=hp.voc_pad,
+                    upsample_factors=hp.voc_upsample_factors,
+                    feat_dims=hp.num_mels,
+                    compute_dims=hp.voc_compute_dims,
+                    res_out_dims=hp.voc_res_out_dims,
+                    res_blocks=hp.voc_res_blocks,
+                    hop_length=hp.hop_length,
+                    sample_rate=hp.sample_rate,
+                    mode=hp.voc_mode).to(device)
 
     model.load(model_path)
     return model
@@ -57,3 +62,4 @@ def synthesize(input_text, tts_model, voc_model, alpha=1.0):
         m = torch.tensor(m).unsqueeze(0)
         voc_model.generate(m, '', True, 11_000, 550, True)
     return wav
+
