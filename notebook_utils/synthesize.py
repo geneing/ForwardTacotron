@@ -32,6 +32,7 @@ def get_forward_model(model_path):
 
 def get_wavernn_model(model_path):
     device = torch.device('cuda')
+    print()
     model = WaveRNN(rnn_dims=hp.voc_rnn_dims,
                     fc_dims=hp.voc_fc_dims,
                     bits=hp.bits,
