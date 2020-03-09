@@ -1,5 +1,5 @@
 numpy==1.16.2
-librosa
+librosa>=0.7.2
 matplotlib
 unidecode
 inflect
