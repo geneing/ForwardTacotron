@@ -61,5 +61,6 @@ def synthesize(input_text, tts_model, voc_model, alpha=1.0):
     else:
         m = torch.tensor(m).unsqueeze(0)
         wav = voc_model.generate(m, '/tmp/sample.wav', True, hp.voc_target, hp.voc_overlap, hp.mu_law)
+        print()
     return wav
 
