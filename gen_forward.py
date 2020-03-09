@@ -20,8 +20,8 @@ if __name__ == "__main__":
     parser.add_argument('--save_attention', '-a', dest='save_attn', action='store_true', help='Save Attention Plots')
     parser.add_argument('--force_cpu', '-c', action='store_true', help='Forces CPU-only training, even when in CUDA capable environment')
     parser.add_argument('--hp_file', metavar='FILE', default='hparams.py', help='The file to use for the hyperparameters')
-    parser.add_argument('--alpha', type=float, default=1.)
-
+    parser.add_argument('--alpha', type=float, default=1., help='Parameter for controlling length regulator for speedup '
+                                                                'or slow-down of generated speech, e.g. alpha=2.0 is double-time')
     parser.set_defaults(input_text=None)
     parser.set_defaults(weights_path=None)
 
