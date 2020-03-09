@@ -19,7 +19,6 @@
 
 ## ForwardTacotron + Griffin-Lim
 
-
 <p class="text">The Senate's bill to repeal and replace the Affordable Care-Act is now imperiled.</p>
 
 | normal speed | faster (1.4) | slower (0.6) |
