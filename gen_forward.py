@@ -93,16 +93,16 @@ if __name__ == "__main__":
         voc_load_path = args.voc_weights if args.voc_weights else paths.voc_latest_weights
         voc_model.load(voc_load_path)
 
-    print('\nInitialising Light TTS Model...\n')
+    print('\nInitialising Forward TTS Model...\n')
     tts_model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
                                 num_chars=len(symbols),
-                                durpred_conv_dims=hp.forward_durpred_conv_dims,
                                 durpred_rnn_dims=hp.forward_durpred_rnn_dims,
+                                durpred_conv_dims=hp.forward_durpred_conv_dims,
                                 rnn_dim=hp.forward_rnn_dims,
                                 postnet_k=hp.forward_postnet_K,
                                 postnet_dims=hp.forward_postnet_dims,
-                                prenet_dims=hp.forward_prenet_dims,
                                 prenet_k=hp.forward_prenet_K,
+                                prenet_dims=hp.forward_prenet_dims,
                                 highways=hp.forward_num_highways,
                                 n_mels=hp.num_mels).to(device)
 

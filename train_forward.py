@@ -47,16 +47,16 @@ def main():
     print('Using device:', device)
 
     # Instantiate Light TTS Model
-    print('\nInitialising Light TTS Model...\n')
+    print('\nInitialising Forward TTS Model...\n')
     model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
                             num_chars=len(symbols),
+                            durpred_rnn_dims=hp.forward_durpred_rnn_dims,
                             durpred_conv_dims=hp.forward_durpred_conv_dims,
                             rnn_dim=hp.forward_rnn_dims,
                             postnet_k=hp.forward_postnet_K,
                             postnet_dims=hp.forward_postnet_dims,
-                            prenet_k=8,
-                            prenet_dims=128,
-                            durpred_rnn_dims=64,
+                            prenet_k=hp.forward_prenet_K,
+                            prenet_dims=hp.forward_prenet_dims,
                             highways=hp.forward_num_highways,
                             n_mels=hp.num_mels).to(device)
 
