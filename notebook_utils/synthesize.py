@@ -55,11 +55,10 @@ def synthesize(input_text, tts_model, voc_model, alpha=1.0):
     # Fix mel spectrogram scaling to be from 0 to 1
     m = (m + 4) / 8
     np.clip(m, 0, 1, out=m)
-    wav = None
     if voc_model == 'griffinlim':
         wav = reconstruct_waveform(m, n_iter=32)
     else:
         m = torch.tensor(m).unsqueeze(0)
-        voc_model.generate(m, '/tmp/sample.wav', True, hp.voc_target, hp.voc_overlap, hp.mu_law)
+        wav = voc_model.generate(m, '/tmp/sample.wav', True, hp.voc_target, hp.voc_overlap, hp.mu_law)
     return wav
 
