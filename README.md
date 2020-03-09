@@ -17,9 +17,9 @@ does not any attention. Hence, the required memory grows linearly with text size
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
-You can use this Colab notebook to synthesize your own text:
+You can use this notebook below to synthesize your own text:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/headliner/blob/master/notebooks/Advanced_Neural_Machine_Translation_Example.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/ForwardTacotron/blob/master/notebooks/synthesize.ipynb)
 
 ## Installation
 
