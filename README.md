@@ -17,6 +17,10 @@ does not any attention. Hence, the required memory grows linearly with text size
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
+You can use this Colab notebook to synthesize your own text:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/headliner/blob/master/notebooks/Advanced_Neural_Machine_Translation_Example.ipynb)
+
 ## Installation
 
 Make sure you have:
@@ -51,7 +55,7 @@ python train_forward.py
 ```
 python gen_forward.py --alpha 1 --input_text "this is whatever you want it to be" griffinlim
 ```
-(6) As in the original repo you can also use a trained WaveRNN vocoder:
+As in the original repo you can also use a trained WaveRNN vocoder:
 ```
 python gen_forward.py --input_text "this is whatever you want it to be" wavernn
 ```
