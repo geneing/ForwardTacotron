@@ -9,7 +9,6 @@ from utils.paths import Paths
 from models.tacotron import Tacotron
 import argparse
 from utils import data_parallel_workaround
-import os
 from pathlib import Path
 import time
 import numpy as np
