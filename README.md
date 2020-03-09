@@ -19,10 +19,10 @@ does not any attention. Hence, the required memory grows linearly with text size
 
 ## Installation
 
-Ensure you have:
+Make sure you have:
 
 * Python >= 3.6
-* [Pytorch 1 with CUDA](https://pytorch.org/)
+* [PyTorch 1 with CUDA](https://pytorch.org/)
 
 Then install the rest with pip:
 ```
@@ -31,30 +31,30 @@ pip install -r requirements.txt
 
 ## Training your own Model
 
-1. Download and preprocess the [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) Dataset.
-    ```
-    python preprocess.py --path /path/to/ljspeech
-    ```
-2. Train Tacotron with:
-    ```
-    python train_tacotron.py
-    ```
-3. Use the trained tacotron model to create alignment features with
-    ```
-    python train_tacotron.py --force_align
-    ```
-4. Train ForwardTacotron with 
-    ```
-    python train_forward.py
-    ```
-5. Generate Sentences with Griffin-Lim vocoder
-    ```
-    python gen_forward.py --alpha 1 --input_text "this is whatever you want it to be" griffinlim
-    ```
-6. As in the original repo you can also use a trained WaveRNN vocoder:
-    ```
-    python gen_forward.py --input_text "this is whatever you want it to be" wavernn
-    ```
+(1) Download and preprocess the [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) Dataset.
+ ```
+python preprocess.py --path /path/to/ljspeech
+```
+(2) Train Tacotron with:
+```
+python train_tacotron.py
+```
+(3) Use the trained tacotron model to create alignment features with
+```
+python train_tacotron.py --force_align
+```
+(4) Train ForwardTacotron with 
+```
+python train_forward.py
+```
+(5) Generate Sentences with Griffin-Lim vocoder
+```
+python gen_forward.py --alpha 1 --input_text "this is whatever you want it to be" griffinlim
+```
+(6) As in the original repo you can also use a trained WaveRNN vocoder:
+```
+python gen_forward.py --input_text "this is whatever you want it to be" wavernn
+```
 ____
 
 ## References
