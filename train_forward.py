@@ -3,7 +3,7 @@ import traceback
 from torch import optim, nn
 import torch.nn.functional as F
 
-from models.light_tts_3 import LightTTS
+from models.forward_tacotron import ForwardTacotron
 from utils import hparams as hp
 from utils.dataset import get_tts_datasets
 from utils.display import *
@@ -38,7 +38,7 @@ def main():
 
     if not args.force_cpu and torch.cuda.is_available():
         device = torch.device('cuda')
-        for session in hp.light_schedule:
+        for session in hp.forward_schedule:
             _, _, batch_size = session
             if batch_size % torch.cuda.device_count() != 0:
                 raise ValueError('`batch_size` must be evenly divisible by n_gpus!')
@@ -48,17 +48,17 @@ def main():
 
     # Instantiate Light TTS Model
     print('\nInitialising Light TTS Model...\n')
-    model = LightTTS(embed_dims=hp.light_embed_dims,
-                     num_chars=len(symbols),
-                     durpred_conv_dims=hp.light_durpred_conv_dims,
-                     rnn_dim=hp.light_rnn_dims,
-                     postnet_k=hp.light_postnet_K,
-                     postnet_dims=hp.light_postnet_dims,
-                     prenet_k=8,
-                     prenet_dims=128,
-                     durpred_rnn_dims=64,
-                     highways=hp.light_num_highways,
-                     n_mels=hp.num_mels).to(device)
+    model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
+                            num_chars=len(symbols),
+                            durpred_conv_dims=hp.forward_durpred_conv_dims,
+                            rnn_dim=hp.forward_rnn_dims,
+                            postnet_k=hp.forward_postnet_K,
+                            postnet_dims=hp.forward_postnet_dims,
+                            prenet_k=8,
+                            prenet_dims=128,
+                            durpred_rnn_dims=64,
+                            highways=hp.forward_num_highways,
+                            n_mels=hp.num_mels).to(device)
 
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
@@ -68,7 +68,7 @@ def main():
     restore_checkpoint('light', paths, model, optimizer, create_if_missing=True)
 
     if not force_gta:
-        for i, session in enumerate(hp.light_schedule):
+        for i, session in enumerate(hp.forward_schedule):
             current_step = model.get_step()
 
             lr, max_step, batch_size = session
@@ -119,8 +119,8 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
 
             loss.backward()
 
-            if hp.light_clip_grad_norm is not None:
-                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hp.light_clip_grad_norm)
+            if hp.forward_clip_grad_norm is not None:
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hp.forward_clip_grad_norm)
                 if np.isnan(grad_norm):
                     print('grad_norm was NaN!')
 
@@ -136,7 +136,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
             step = model.get_step()
             k = step // 1000
 
-            if step % hp.light_checkpoint_every == 0:
+            if step % hp.forward_checkpoint_every == 0:
                 ckpt_name = f'fast_speech_step{k}K'
                 save_checkpoint('light', paths, model, optimizer,
                                 name=ckpt_name, is_silent=True)
@@ -146,16 +146,16 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
                 try:
                     seq = x[idx].tolist()
                     m_gen = model.generate(seq)
-                    save_spectrogram(m_gen, paths.light_mel_plot / f'{step}_gen', 600)
+                    save_spectrogram(m_gen, paths.forward_mel_plot / f'{step}_gen', 600)
                 except Exception:
                     traceback.print_exc()
-                save_spectrogram(np_now(m_post_hat[idx]), paths.light_mel_plot/f'{step}_gta', 600)
-                save_spectrogram(np_now(m[idx]), paths.light_mel_plot/f'{step}_target', 600)
+                save_spectrogram(np_now(m_post_hat[idx]), paths.forward_mel_plot/f'{step}_gta', 600)
+                save_spectrogram(np_now(m[idx]), paths.forward_mel_plot/f'{step}_target', 600)
 
             msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Mel Loss: {avg_loss:#.4} ' \
                   f'| Duration Loss: {dur_avg_loss:#.4} | {speed:#.2} steps/s | Step: {k}k | '
             stream(msg)
-        model.log(paths.light_log, msg)
+        model.log(paths.forward_log, msg)
 
         save_checkpoint('light', paths, model, optimizer, is_silent=True)
 

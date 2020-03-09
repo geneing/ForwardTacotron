@@ -1,7 +1,7 @@
 import torch
 
 from models.fatchord_version import WaveRNN
-from models.light_tts import LightTTS
+from models.forward_tacotron import ForwardTacotron
 from utils import hparams as hp
 from utils.text.symbols import symbols
 from utils.paths import Paths
@@ -94,17 +94,19 @@ if __name__ == "__main__":
         voc_model.load(voc_load_path)
 
     print('\nInitialising Light TTS Model...\n')
-    tts_model = LightTTS(embed_dims=hp.light_embed_dims,
-                         num_chars=len(symbols),
-                         durpred_conv_dims=hp.light_durpred_conv_dims,
-                         durpred_rnn_dims=hp.light_durpred_rnn_dims,
-                         rnn_dim=hp.light_rnn_dims,
-                         postnet_k=hp.light_postnet_K,
-                         postnet_dims=hp.light_postnet_dims,
-                         postnet_highways=hp.light_num_highways,
-                         n_mels=hp.num_mels).to(device)
+    tts_model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
+                                num_chars=len(symbols),
+                                durpred_conv_dims=hp.forward_durpred_conv_dims,
+                                durpred_rnn_dims=hp.forward_durpred_rnn_dims,
+                                rnn_dim=hp.forward_rnn_dims,
+                                postnet_k=hp.forward_postnet_K,
+                                postnet_dims=hp.forward_postnet_dims,
+                                prenet_dims=hp.forward_prenet_dims,
+                                prenet_k=hp.forward_prenet_K,
+                                highways=hp.forward_num_highways,
+                                n_mels=hp.num_mels).to(device)
 
-    tts_load_path = tts_weights if tts_weights else paths.light_latest_weights
+    tts_load_path = tts_weights if tts_weights else paths.forward_latest_weights
     tts_model.load(tts_load_path)
 
     if input_text:
@@ -147,9 +149,9 @@ if __name__ == "__main__":
             v_type = 'wavernn_unbatched'
 
         if input_text:
-            save_path = paths.light_output/f'{input_text[:10]}_{args.alpha}_{v_type}_{tts_k}k.wav'
+            save_path = paths.forward_output/f'{input_text[:10]}_{args.alpha}_{v_type}_{tts_k}k.wav'
         else:
-            save_path = paths.light_output/f'{i}_{v_type}_{tts_k}k.wav'
+            save_path = paths.forward_output/f'{i}_{v_type}_{tts_k}k.wav'
 
         if args.vocoder == 'wavernn':
             m = torch.tensor(m).unsqueeze(0)

@@ -79,7 +79,7 @@ class BatchNormConv(nn.Module):
         return x
 
 
-class LightTTS(nn.Module):
+class ForwardTacotron(nn.Module):
 
     def __init__(self,
                  embed_dims,

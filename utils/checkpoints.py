@@ -16,9 +16,9 @@ def get_checkpoint_paths(checkpoint_type: str, paths: Paths):
         optim_path = paths.tts_latest_optim
         checkpoint_path = paths.tts_checkpoints    
     elif checkpoint_type is 'light':
-        weights_path = paths.light_latest_weights
-        optim_path = paths.light_latest_optim
-        checkpoint_path = paths.light_checkpoints
+        weights_path = paths.forward_latest_weights
+        optim_path = paths.forward_latest_optim
+        checkpoint_path = paths.forward_checkpoints
     elif checkpoint_type is 'voc':
         weights_path = paths.voc_latest_weights
         optim_path = paths.voc_latest_optim

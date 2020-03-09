@@ -22,7 +22,7 @@ class Paths:
         self.voc_step = self.voc_checkpoints/'step.npy'
         self.voc_log = self.voc_checkpoints/'log.txt'
 
-        # Tactron/TTS Paths
+        # Tactron Paths
         self.tts_checkpoints = self.base/'checkpoints'/f'{tts_id}.tacotron'
         self.tts_latest_weights = self.tts_checkpoints/'latest_weights.pyt'
         self.tts_latest_optim = self.tts_checkpoints/'latest_optim.pyt'
@@ -32,15 +32,15 @@ class Paths:
         self.tts_attention = self.tts_checkpoints/'attention'
         self.tts_mel_plot = self.tts_checkpoints/'mel_plots'
 
-        # Light/TTS Paths
-        self.light_checkpoints = self.base/'checkpoints'/f'{tts_id}.light'
-        self.light_latest_weights = self.light_checkpoints/'latest_weights.pyt'
-        self.light_latest_optim = self.light_checkpoints/'latest_optim.pyt'
-        self.light_output = self.base/'model_outputs'/f'{tts_id}.light'
-        self.light_step = self.light_checkpoints/'step.npy'
-        self.light_log = self.light_checkpoints/'log.txt'
-        self.light_attention = self.light_checkpoints/'attention'
-        self.light_mel_plot = self.light_checkpoints/'mel_plots'
+        # Forward Tacotron Paths
+        self.forward_checkpoints = self.base/'checkpoints'/f'{tts_id}.forward'
+        self.forward_latest_weights = self.forward_checkpoints/'latest_weights.pyt'
+        self.forward_latest_optim = self.forward_checkpoints/'latest_optim.pyt'
+        self.forward_output = self.base/'model_outputs'/f'{tts_id}.forward'
+        self.forward_step = self.forward_checkpoints/'step.npy'
+        self.forward_log = self.forward_checkpoints/'log.txt'
+        self.forward_attention = self.forward_checkpoints/'attention'
+        self.forward_mel_plot = self.forward_checkpoints/'mel_plots'
 
         self.create_paths()
 
@@ -56,10 +56,10 @@ class Paths:
         os.makedirs(self.tts_output, exist_ok=True)
         os.makedirs(self.tts_attention, exist_ok=True)
         os.makedirs(self.tts_mel_plot, exist_ok=True)
-        os.makedirs(self.light_checkpoints, exist_ok=True)
-        os.makedirs(self.light_output, exist_ok=True)
-        os.makedirs(self.light_attention, exist_ok=True)
-        os.makedirs(self.light_mel_plot, exist_ok=True)
+        os.makedirs(self.forward_checkpoints, exist_ok=True)
+        os.makedirs(self.forward_output, exist_ok=True)
+        os.makedirs(self.forward_attention, exist_ok=True)
+        os.makedirs(self.forward_mel_plot, exist_ok=True)
 
     def get_tts_named_weights(self, name):
         """Gets the path for the weights in a named tts checkpoint."""
