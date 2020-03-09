@@ -422,7 +422,7 @@ class WaveRNN(nn.Module):
         # of the model itself. Let caller take care of saving optimzier state.
         torch.save(self.state_dict(), path)
 
-    def num_params(self, print_out=True):
+    def num_params(self, print_out=False):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
         if print_out:
