@@ -10,7 +10,7 @@ The model has following advantages:
 - **Speed:** The generation of a mel spectogram takes about 0.04s on a GeForce RTX 2080.
 - **Controllability:** It is possible to control the speed of the generated utterance.
 - **Efficiency:** In contrast to FastSpeech and Tacotron, the model of ForwardTacotron
-does not any attention. Hence, the required memory grows linearly with text size, which makes it possible to synthesize large articles at once.
+does not use any attention. Hence, the required memory grows linearly with text size, which makes it possible to synthesize large articles at once.
 
 
 ## Samples
