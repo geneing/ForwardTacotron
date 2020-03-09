@@ -119,7 +119,7 @@ if __name__ == "__main__":
         voc_k = voc_model.get_step() // 1000
         tts_k = tts_model.get_step() // 1000
 
-        simple_table([('Tacotron', str(tts_k) + 'k'),
+        simple_table([('Forward Tacotron', str(tts_k) + 'k'),
                     ('Vocoder Type', 'WaveRNN'),
                     ('WaveRNN', str(voc_k) + 'k'),
                     ('Generation Mode', 'Batched' if batched else 'Unbatched'),

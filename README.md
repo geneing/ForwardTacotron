@@ -1,10 +1,18 @@
-# WaveRNN
+# ForwardTacotron
 
-##### (Update: Vanilla Tacotron One TTS system just implemented - more coming soon!)
+Inspired by Microsofts [FastSpeech](https://www.microsoft.com/en-us/research/blog/fastspeech-new-text-to-speech-model-improves-on-speed-accuracy-and-controllability/)
+we modified Tacotron to generate speech in a single forward pass using a duration predictor to align text and generated mel spectrograms. 
+The model has following advantages:
+- Robustness: No repeats and failed attention modes for challenging sentences. 
+- Speed: The generation of a mel spectogram takes about 0.04s on a GeForce RTX 2080.
+- Controllability: It is possible to control the speed of the generated utterance.
+- Efficiency: In contrast to FastSpeech and Tacotron, the model of ForwardTacotron
+does not use attention at all. Hence, the required memory grows linearly with text size, which makes it possible to synthesize large articles at once.
 
-![Tacotron with WaveRNN diagrams](assets/tacotron_wavernn.png)
 
-Pytorch implementation of Deepmind's WaveRNN model from [Efficient Neural Audio Synthesis](https://arxiv.org/abs/1802.08435v1)
+# Samples
+
+[Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
 # Installation
 
@@ -17,86 +25,40 @@ Then install the rest with pip:
 
 > pip install -r requirements.txt
 
-# How to Use
+# Training your own Models
 
-### Quick Start
+1 - Download the [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) Dataset.
 
-If you want to use TTS functionality immediately you can simply use:
+> python preprocess.py --path /path/to/ljspeech
 
-> python quick_start.py
-
-This will generate everything in the default sentences.txt file and output to a new 'quick_start' folder where you can playback the wav files and take a look at the attention plots
-
-You can also use that script to generate custom tts sentences and/or use '-u' to generate unbatched (better audio quality):
-
-> python quick_start.py -u --input_text "What will happen if I run this command?"
-
-
-### Training your own Models
-![Attenion and Mel Training GIF](assets/training_viz.gif)
-
-Download the [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) Dataset.
-
-Edit **hparams.py**, point **wav_path** to your dataset and run:
-
-> python preprocess.py
-
-or use preprocess.py --path to point directly to the dataset
-___
-
-Here's my recommendation on what order to run things:
-
-1 - Train Tacotron with:
+2 - Train Tacotron with:
 
 > python train_tacotron.py
 
-2 - You can leave that finish training or at any point you can use:
+3 - Use the trained tacotron model to create alignment features with
 
-> python train_tacotron.py --force_gta
+> python train_tacotron.py --force_align
 
-this will force tactron to create a GTA dataset even if it hasn't finish training.
+4 - Train Forward Tacotron with 
 
-3 - Train WaveRNN with:
+> python train_forward.py
 
-> python train_wavernn.py --gta
+5 - Generate Sentences with Griffin-Lim vocoder
 
-NB: You can always just run train_wavernn.py without --gta if you're not interested in TTS.
+> python gen_forward.py --alpha 1 --input_text "this is whatever you want it to be" griffinlim
 
-4 - Generate Sentences with both models using:
+As in the original repo you can also use a trained WaveRNN vocoder:
 
-> python gen_tacotron.py wavernn
-
-this will generate default sentences. If you want generate custom sentences you can use
-
-> python gen_tacotron.py --input_text "this is whatever you want it to be" wavernn
-
-And finally, you can always use --help on any of those scripts to see what options are available :)
-
-
-
-# Samples
-
-[Can be found here.](https://fatchord.github.io/model_outputs/)
-
-# Pretrained Models
-
-Currently there are two pretrained models available in the /pretrained/ folder':
-
-Both are trained on LJSpeech
-
-* WaveRNN (Mixture of Logistics output) trained to 800k steps
-* Tacotron trained to 180k steps
+> python gen_forward.py --input_text "this is whatever you want it to be" wavernn
 
 ____
 
 ### References
 
-* [Efficient Neural Audio Synthesis](https://arxiv.org/abs/1802.08435v1)
-* [Tacotron: Towards End-to-End Speech Synthesis](https://arxiv.org/abs/1703.10135)
-* [Natural TTS Synthesis by Conditioning WaveNet on Mel Spectrogram Predictions](https://arxiv.org/abs/1712.05884)
+* [FastSpeech: Fast, Robust and Controllable Text to Speech](https://arxiv.org/abs/1905.09263)
 
 ### Acknowlegements
 
 * [https://github.com/keithito/tacotron](https://github.com/keithito/tacotron)
-* [https://github.com/r9y9/wavenet_vocoder](https://github.com/r9y9/wavenet_vocoder)
-* Special thanks to github users [G-Wang](https://github.com/G-Wang), [geneing](https://github.com/geneing) & [erogol](https://github.com/erogol)
+* [https://github.com/fatchord/WaveRNN](https://github.com/fatchord/WaveRNN)
+* [https://github.com/xcmyz/LightSpeech](https://github.com/xcmyz/LightSpeech)
