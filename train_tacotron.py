@@ -107,14 +107,15 @@ def main():
         print('Creating Ground Truth Aligned Dataset...\n')
         train_set, attn_example = get_tts_datasets(paths.data, 8, model.r)
         create_gta_features(model, train_set, paths.gta)
+        print('\n\nYou can now train WaveRNN on GTA features - use python train_wavernn.py --gta\n')
 
     if force_align:
         print('Creating Attention Alignments...\n')
         train_set, attn_example = get_tts_datasets(paths.data, 8, model.r)
         create_align_features(model, train_set, paths.alg)
+        print('\n\nYou can now train ForwardTacotron - use python train_forward.py\n')
 
 
-    print('\n\nYou can now train WaveRNN on GTA features - use python train_wavernn.py --gta\n')
 
 
 def tts_train_loop(paths: Paths, model: Tacotron, optimizer, train_set, lr, train_steps, attn_example):
