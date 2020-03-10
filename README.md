@@ -17,7 +17,8 @@ does not use any attention. Hence, the required memory grows linearly with text 
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
-You can use this notebook below to synthesize your own text:
+The samples are generated with a model trained 100K steps on LJSpeech together with the pretrained WaveRNN vocoder 
+provided by the WaveRNN repo. Both models are commited in the pretrained folder. You can try them out with the following notebook:  
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/ForwardTacotron/blob/master/notebooks/synthesize.ipynb)
 
