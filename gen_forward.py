@@ -11,7 +11,7 @@ from utils.display import simple_table
 from utils.dsp import reconstruct_waveform, save_wav
 import numpy as np
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     # Parse Arguments
     parser = argparse.ArgumentParser(description='TTS Generator')

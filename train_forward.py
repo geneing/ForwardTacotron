@@ -46,7 +46,7 @@ def main():
         device = torch.device('cpu')
     print('Using device:', device)
 
-    # Instantiate Light TTS Model
+    # Instantiate Forward TTS Model
     print('\nInitialising Forward TTS Model...\n')
     model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
                             num_chars=len(symbols),
@@ -65,7 +65,7 @@ def main():
     print(f'num params {params}')
 
     optimizer = optim.Adam(model.parameters())
-    restore_checkpoint('light', paths, model, optimizer, create_if_missing=True)
+    restore_checkpoint('forward', paths, model, optimizer, create_if_missing=True)
 
     if not force_gta:
         for i, session in enumerate(hp.forward_schedule):
@@ -138,7 +138,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
 
             if step % hp.forward_checkpoint_every == 0:
                 ckpt_name = f'fast_speech_step{k}K'
-                save_checkpoint('light', paths, model, optimizer,
+                save_checkpoint('forward', paths, model, optimizer,
                                 name=ckpt_name, is_silent=True)
 
             if mel_example in ids:
@@ -157,9 +157,7 @@ def train_loop(paths: Paths, model, optimizer, train_set, lr, train_steps, mel_e
             stream(msg)
         model.log(paths.forward_log, msg)
 
-        save_checkpoint('light', paths, model, optimizer, is_silent=True)
-
-        #print(' ')
+        save_checkpoint('forward', paths, model, optimizer, is_silent=True)
 
 
 def create_gta_features(model: Tacotron, train_set, save_path: Path):
