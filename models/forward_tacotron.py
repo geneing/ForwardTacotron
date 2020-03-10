@@ -34,7 +34,7 @@ class LengthRegulator(nn.Module):
         output = []
         max_len = max([x[i].size(0) for i in range(len(x))])
         for i, seq in enumerate(x):
-            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], "constant", 0.0)
+            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], 'constant', 0.0)
             output.append(padded)
         output = torch.stack(output)
         return output
