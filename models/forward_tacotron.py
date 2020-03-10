@@ -141,7 +141,6 @@ class ForwardTacotron(nn.Module):
 
         x_post = self.pad(x_post, mel.size(2))
         x = self.pad(x, mel.size(2))
-
         return x, x_post, dur_hat
 
     def generate(self, x, alpha=1.0):
