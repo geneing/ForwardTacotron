@@ -92,7 +92,8 @@ class ForwardTacotron(nn.Module):
                  postnet_k,
                  postnet_dims,
                  highways,
-                 n_mels=80):
+                 dropout,
+                 n_mels):
 
         super().__init__()
         self.rnn_dim = rnn_dim
@@ -117,6 +118,7 @@ class ForwardTacotron(nn.Module):
                             channels=postnet_dims,
                             proj_channels=[postnet_dims, n_mels],
                             num_highways=highways)
+        self.dropout = dropout
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
@@ -131,7 +133,9 @@ class ForwardTacotron(nn.Module):
         x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
-        x = F.dropout(x, p=0.5, training=self.training)
+        x = F.dropout(x,
+                      p=self.dropout,
+                      training=self.training)
         x = self.lin(x)
         x = x.transpose(1, 2)
 
@@ -155,7 +159,9 @@ class ForwardTacotron(nn.Module):
         x = self.prenet(x)
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
-        x = F.dropout(x, p=0.5, training=self.training)
+        x = F.dropout(x,
+                      p=self.dropout,
+                      training=self.training)
         x = self.lin(x)
         x = x.transpose(1, 2)
 

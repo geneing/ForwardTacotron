@@ -25,6 +25,7 @@ def get_forward_model(model_path):
                             prenet_k=hp.forward_prenet_K,
                             prenet_dims=hp.forward_prenet_dims,
                             highways=hp.forward_num_highways,
+                            dropout=hp.forward_dropout,
                             n_mels=hp.num_mels).to(device)
     model.load(model_path)
     return model

@@ -104,6 +104,7 @@ if __name__ == '__main__':
                                 prenet_k=hp.forward_prenet_K,
                                 prenet_dims=hp.forward_prenet_dims,
                                 highways=hp.forward_num_highways,
+                                dropout=hp.forward_dropout,
                                 n_mels=hp.num_mels).to(device)
 
     tts_load_path = tts_weights if tts_weights else paths.forward_latest_weights
