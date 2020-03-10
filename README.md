@@ -1,9 +1,16 @@
 # ⏩ ForwardTacotron
 
 Inspired by Microsoft's [FastSpeech](https://www.microsoft.com/en-us/research/blog/fastspeech-new-text-to-speech-model-improves-on-speed-accuracy-and-controllability/)
-we modified Tacotron (Fork from fatchord's [WaveRNN](https://github.com/fatchord/WaveRNN)) to generate speech in a single forward pass using a duration predictor to align text and generated mel spectrograms. Hence, we call the model ForwardTacotron.
+we modified Tacotron (Fork from fatchord's [WaveRNN](https://github.com/fatchord/WaveRNN)) to generate speech in a single forward pass using a duration predictor to align text and generated mel spectrograms. Hence, we call the model ForwardTacotron (see Fig. 1).
 
-![Original FastSpeech implementation](assets/fast_speech.png)
+![Model Architecture](assets/model.png)
+
+<p align="center">
+  <img src="assets/model.png" />
+</p>
+<p align="center">
+  <b>Figure 1:</b> Model Architecture.
+</p>
 
 The model has following advantages:
 - **Robustness:** No repeats and failed attention modes for challenging sentences.
