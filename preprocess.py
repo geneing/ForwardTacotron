@@ -66,13 +66,9 @@ if len(wav_files) == 0:
     print('or use the --path option.\n')
 
 else:
-
-    if not hp.ignore_tts:
-
-        text_dict = ljspeech(path)
-
-        with open(paths.data/'text_dict.pkl', 'wb') as f:
-            pickle.dump(text_dict, f)
+    text_dict = ljspeech(path)
+    with open(paths.data/'text_dict.pkl', 'wb') as f:
+        pickle.dump(text_dict, f)
 
     n_workers = max(1, args.num_workers)
 
@@ -88,7 +84,8 @@ else:
     dataset = []
 
     for i, (item_id, length) in enumerate(pool.imap_unordered(process_wav, wav_files), 1):
-        dataset += [(item_id, length)]
+        if item_id in text_dict:
+            dataset += [(item_id, length)]
         bar = progbar(i, len(wav_files))
         message = f'{bar} {i}/{len(wav_files)} '
         stream(message)
