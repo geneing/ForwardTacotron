@@ -154,6 +154,7 @@ class ForwardTacotron(nn.Module):
 
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
+        dur = dur.squeeze(2)
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
