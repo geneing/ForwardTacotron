@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Union
 
+import numpy as np
+
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -14,30 +16,28 @@ class LengthRegulator(nn.Module):
         super().__init__()
 
     def forward(self, x, dur):
-        output = []
-        for x_i, dur_i in zip(x, dur):
-            expanded = self.expand(x_i, dur_i)
-            output.append(expanded)
-        output = self.pad(output)
-        return output
+        return self.expand(x, dur)
+     
+    @staticmethod
+    def build_index(duration, x):
+        duration[duration<0]=0
+        tot_duration = duration.cumsum(1).detach().cpu().numpy().astype('int')
+        max_duration = int(tot_duration.max().item())
+        index = np.zeros([x.shape[0], max_duration, x.shape[2]], dtype='long')
+
+        for i in range(tot_duration.shape[0]):
+            pos = 0
+            for j in range(tot_duration.shape[1]):
+                pos1 = tot_duration[i, j]
+                index[i, pos:pos1, :] = j
+                pos = pos1
+            index[i, pos:, :] = j
+        return torch.LongTensor(index).to(duration.device)
 
     def expand(self, x, dur):
-        output = []
-        for i, frame in enumerate(x):
-            expanded_len = int(dur[i] + 0.5)
-            expanded = frame.expand(expanded_len, -1)
-            output.append(expanded)
-        output = torch.cat(output, 0)
-        return output
-
-    def pad(self, x):
-        output = []
-        max_len = max([x[i].size(0) for i in range(len(x))])
-        for i, seq in enumerate(x):
-            padded = F.pad(seq, [0, 0, 0, max_len - seq.size(0)], 'constant', 0.0)
-            output.append(padded)
-        output = torch.stack(output)
-        return output
+        idx = self.build_index(dur, x)
+        y = torch.gather(x, 1, idx)
+        return y
 
 
 class DurationPredictor(nn.Module):
@@ -154,6 +154,7 @@ class ForwardTacotron(nn.Module):
 
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
+        dur = dur.squeeze(2)
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
