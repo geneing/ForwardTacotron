@@ -4,6 +4,7 @@ from torch.utils.data.sampler import Sampler
 from torch.utils.data import Dataset, DataLoader
 from utils.dsp import *
 from utils import hparams as hp
+from utils.files import unpickle_binary
 from utils.text import text_to_sequence
 from pathlib import Path
 import random
@@ -97,15 +98,15 @@ def collate_vocoder(batch):
 ###################################################################################
 
 
-def get_tts_datasets(path: Path, batch_size, r, alignments=False):
+def get_taco_datasets(path: Path, batch_size, r, alignments=False):
 
-    with open(path/'dataset.pkl', 'rb') as f:
-        dataset = pickle.load(f)
+    train_dataset = unpickle_binary(path/'train_dataset.pkl')
+    val_dataset = unpickle_binary(path/'val_dataset.pkl')
 
     dataset_ids = []
     mel_lengths = []
 
-    for (item_id, len) in dataset:
+    for (item_id, len) in train_dataset:
         if len <= hp.tts_max_mel_len:
             dataset_ids += [item_id]
             mel_lengths += [len]
@@ -113,7 +114,7 @@ def get_tts_datasets(path: Path, batch_size, r, alignments=False):
     with open(path/'text_dict.pkl', 'rb') as f:
         text_dict = pickle.load(f)
 
-    train_dataset = TTSDataset(path, dataset_ids, text_dict, alignments=alignments)
+    train_dataset = TacoDataset(path, dataset_ids, text_dict)
 
     sampler = BinnedLengthSampler(mel_lengths, batch_size, batch_size * 3)
 
@@ -133,13 +134,12 @@ def get_tts_datasets(path: Path, batch_size, r, alignments=False):
     return train_set, attn_example
 
 
-class TTSDataset(Dataset):
+class TacoDataset(Dataset):
 
-    def __init__(self, path: Path, dataset_ids, text_dict, alignments=False):
+    def __init__(self, path: Path, dataset_ids, text_dict):
         self.path = path
         self.metadata = dataset_ids
         self.text_dict = text_dict
-        self.alignments = alignments
 
     def __getitem__(self, index):
         item_id = self.metadata[index]
@@ -147,11 +147,26 @@ class TTSDataset(Dataset):
         x = text_to_sequence(text)
         mel = np.load(self.path/'mel'/f'{item_id}.npy')
         mel_len = mel.shape[-1]
-        if self.alignments:
-            dur = np.load(self.path/'alg'/f'{item_id}.npy')
-        else:
-            # dummy durations to simplify collate func
-            dur = np.zeros((mel.shape[0], 1))
+        return x, mel, item_id, mel_len
+
+    def __len__(self):
+        return len(self.metadata)
+
+
+class ForwardDataset(Dataset):
+
+    def __init__(self, path: Path, dataset_ids, text_dict):
+        self.path = path
+        self.metadata = dataset_ids
+        self.text_dict = text_dict
+
+    def __getitem__(self, index):
+        item_id = self.metadata[index]
+        text = self.text_dict[item_id]
+        x = text_to_sequence(text)
+        mel = np.load(self.path/'mel'/f'{item_id}.npy')
+        mel_len = mel.shape[-1]
+        dur = np.load(self.path/'alg'/f'{item_id}.npy')
         return x, mel, item_id, mel_len, dur
 
     def __len__(self):
@@ -161,39 +176,35 @@ class TTSDataset(Dataset):
 def pad1d(x, max_len):
     return np.pad(x, (0, max_len - len(x)), mode='constant')
 
+
 def pad2d(x, max_len):
     return np.pad(x, ((0, 0), (0, max_len - x.shape[-1])), mode='constant')
 
 
 def collate_tts(batch, r):
-
     x_lens = [len(x[0]) for x in batch]
     max_x_len = max(x_lens)
-
     chars = [pad1d(x[0], max_x_len) for x in batch]
     chars = np.stack(chars)
-
     spec_lens = [x[1].shape[-1] for x in batch]
     max_spec_len = max(spec_lens) + 1
     if max_spec_len % r != 0:
         max_spec_len += r - max_spec_len % r
-
     mel = [pad2d(x[1], max_spec_len) for x in batch]
     mel = np.stack(mel)
-
-    dur = [pad1d(x[4][:max_x_len], max_x_len) for x in batch]
-    dur = np.stack(dur)
-
     ids = [x[2] for x in batch]
     mel_lens = [x[3] for x in batch]
-
     chars = torch.tensor(chars).long()
     mel = torch.tensor(mel)
-    dur = torch.tensor(dur).float()
-
     # scale spectrograms to -4 <--> 4
     mel = (mel * 8.) - 4.
-    return chars, mel, ids, mel_lens, dur
+    # additional durations for forward
+    if len(batch[0]) > 4:
+        dur = [pad1d(x[4][:max_x_len], max_x_len) for x in batch]
+        dur = np.stack(dur)
+        return chars, mel, ids, mel_lens, dur
+    else:
+        return chars, mel, ids, mel_lens
 
 
 class BinnedLengthSampler(Sampler):

@@ -1,4 +1,6 @@
 import glob
+from random import Random
+
 from utils.display import *
 from utils.dsp import *
 from utils import hparams as hp
@@ -9,7 +11,7 @@ import argparse
 
 from utils.text import clean_text
 from utils.text.recipes import ljspeech
-from utils.files import get_files
+from utils.files import get_files, pickle_binary
 from pathlib import Path
 
 
@@ -79,7 +81,8 @@ else:
         ('Bit Depth', hp.bits),
         ('Mu Law', hp.mu_law),
         ('Hop Length', hp.hop_length),
-        ('CPU Usage', f'{n_workers}/{cpu_count()}')
+        ('CPU Usage', f'{n_workers}/{cpu_count()}'),
+        ('Num Validation', hp.n_val)
     ])
 
     pool = Pool(processes=n_workers)
@@ -89,19 +92,20 @@ else:
         if item_id in text_dict:
             dataset += [(item_id, length)]
             cleaned_texts += [(item_id, cleaned_text)]
-        #print(f'{item_id} {text_dict[item_id].strip()}')
-        #print(f'{item_id} {cleaned_text}')
         bar = progbar(i, len(wav_files))
         message = f'{bar} {i}/{len(wav_files)} '
         stream(message)
 
+    random = Random(hp.seed)
+    random.shuffle(dataset)
+    train_dataset = dataset[hp.n_val:]
+    val_dataset = dataset[:hp.n_val]
+
     for id, text in cleaned_texts:
         text_dict[id] = text
 
-    with open(paths.data/'text_dict.pkl', 'wb') as f:
-        pickle.dump(text_dict, f)
-
-    with open(paths.data/'dataset.pkl', 'wb') as f:
-        pickle.dump(dataset, f)
+    pickle_binary(text_dict, paths.data/'text_dict.pkl')
+    pickle_binary(train_dataset, paths.data/'train_dataset.pkl')
+    pickle_binary(val_dataset, paths.data/'val_dataset.pkl')
 
     print('\n\nCompleted. Ready to run "python train_tacotron.py" or "python train_wavernn.py". \n')

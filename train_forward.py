@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from models.forward_tacotron import ForwardTacotron
 from utils import hparams as hp
-from utils.dataset import get_tts_datasets
+from utils.dataset import get_taco_datasets
 from utils.display import *
 from utils.text.symbols import symbols
 from utils.paths import Paths
@@ -80,10 +80,10 @@ def main():
                           ('Batch Size', batch_size),
                           ('Learning Rate', lr)])
 
-            train_set, mel_example = get_tts_datasets(paths.data, batch_size, 1, alignments=True)
+            train_set, mel_example = get_taco_datasets(paths.data, batch_size, 1, alignments=True)
             train_loop(paths, model, optimizer, train_set, lr, training_steps, mel_example)
 
-    train_set, mel_example = get_tts_datasets(paths.data, 8, 1, alignments=True)
+    train_set, mel_example = get_taco_datasets(paths.data, 8, 1, alignments=True)
     create_gta_features(model, train_set, paths.gta)
     print('Training Complete.')
 
