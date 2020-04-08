@@ -1,3 +1,7 @@
+from phonemizer.phonemize import phonemize
+from utils import hparams as hp
+
+
 """ from https://github.com/keithito/tacotron """
 
 '''
@@ -66,25 +70,30 @@ def convert_to_ascii(text):
 
 
 def basic_cleaners(text):
-  '''Basic pipeline that lowercases and collapses whitespace without transliteration.'''
-  text = lowercase(text)
-  text = collapse_whitespace(text)
-  return text
-
-
-def transliteration_cleaners(text):
-  '''Pipeline for non-English text that transliterates to ASCII.'''
-  text = convert_to_ascii(text)
-  text = lowercase(text)
+  text = to_phonemes(text)
   text = collapse_whitespace(text)
   return text
 
 
 def english_cleaners(text):
-  '''Pipeline for English text, including number and abbreviation expansion.'''
   text = convert_to_ascii(text)
-  text = lowercase(text)
   text = expand_numbers(text)
   text = expand_abbreviations(text)
+  text = to_phonemes(text)
   text = collapse_whitespace(text)
   return text
+
+
+def to_phonemes(text):
+    text = text.replace('-', '—')
+    phonemes = phonemize(text,
+                         language=hp.language,
+                         backend='espeak',
+                         strip=True,
+                         preserve_punctuation=True,
+                         with_stress=False,
+                         njobs=1,
+                         punctuation_marks=';:,.!?¡¿—…"«»“”()',
+                         language_switch='remove-flags')
+    phonemes = phonemes.replace('—', '-')
+    return phonemes

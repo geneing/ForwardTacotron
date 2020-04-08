@@ -9,10 +9,20 @@ from utils.text import cmudict
 _pad = '_'
 _punctuation = '!\'(),.:;? '
 _special = '-'
-_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 # Prepend "@" to ARPAbet symbols to ensure uniqueness (some are the same as uppercase letters):
 _arpabet = ['@' + s for s in cmudict.valid_symbols]
 
-# Export all symbols:
-symbols = [_pad] + list(_special) + list(_punctuation) + list(_letters) + _arpabet
+# Phonemes
+_vowels = 'iyɨʉɯuɪʏʊeøɘəɵɤoɛœɜɞʌɔæɐaɶɑɒᵻ'
+_non_pulmonic_consonants = 'ʘɓǀɗǃʄǂɠǁʛ'
+_pulmonic_consonants = 'pbtdʈɖcɟkɡqɢʔɴŋɲɳnɱmʙrʀⱱɾɽɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦɬɮʋɹɻjɰlɭʎʟ'
+_suprasegmentals = 'ˈˌːˑ'
+_other_symbols = 'ʍwɥʜʢʡɕʑɺɧ'
+_diacrilics = 'ɚ˞ɫ'
+
+
+
+phonemes = sorted(list(
+   _pad + _punctuation + _special + _vowels + _non_pulmonic_consonants
+   + _pulmonic_consonants + _suprasegmentals + _other_symbols + _diacrilics))

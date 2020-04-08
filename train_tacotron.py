@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from utils import hparams as hp
 from utils.display import *
 from utils.dataset import get_tts_datasets
-from utils.text.symbols import symbols
 from utils.paths import Paths
 from models.tacotron import Tacotron
 import argparse
@@ -13,6 +12,7 @@ from pathlib import Path
 import time
 import numpy as np
 from utils.checkpoints import save_checkpoint, restore_checkpoint
+from utils.text import phonemes
 
 
 def np_now(x: torch.Tensor): return x.detach().cpu().numpy()
@@ -48,7 +48,7 @@ def main():
     # Instantiate Tacotron Model
     print('\nInitialising Tacotron Model...\n')
     model = Tacotron(embed_dims=hp.tts_embed_dims,
-                     num_chars=len(symbols),
+                     num_chars=len(phonemes),
                      encoder_dims=hp.tts_encoder_dims,
                      decoder_dims=hp.tts_decoder_dims,
                      n_mels=hp.num_mels,

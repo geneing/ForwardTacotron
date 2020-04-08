@@ -6,6 +6,8 @@ from multiprocessing import Pool, cpu_count
 from utils.paths import Paths
 import pickle
 import argparse
+
+from utils.text import clean_text
 from utils.text.recipes import ljspeech
 from utils.files import get_files
 from pathlib import Path
@@ -52,7 +54,9 @@ def process_wav(path: Path):
     m, x = convert_file(path)
     np.save(paths.mel/f'{wav_id}.npy', m, allow_pickle=False)
     np.save(paths.quant/f'{wav_id}.npy', x, allow_pickle=False)
-    return wav_id, m.shape[-1]
+    text = text_dict[wav_id]
+    text = clean_text(text)
+    return wav_id, m.shape[-1], text
 
 
 wav_files = get_files(path, extension)
@@ -67,8 +71,6 @@ if len(wav_files) == 0:
 
 else:
     text_dict = ljspeech(path)
-    with open(paths.data/'text_dict.pkl', 'wb') as f:
-        pickle.dump(text_dict, f)
 
     n_workers = max(1, args.num_workers)
 
@@ -82,13 +84,22 @@ else:
 
     pool = Pool(processes=n_workers)
     dataset = []
-
-    for i, (item_id, length) in enumerate(pool.imap_unordered(process_wav, wav_files), 1):
+    cleaned_texts = []
+    for i, (item_id, length, cleaned_text) in enumerate(pool.imap_unordered(process_wav, wav_files), 1):
         if item_id in text_dict:
             dataset += [(item_id, length)]
+            cleaned_texts += [(item_id, cleaned_text)]
+        #print(f'{item_id} {text_dict[item_id].strip()}')
+        #print(f'{item_id} {cleaned_text}')
         bar = progbar(i, len(wav_files))
         message = f'{bar} {i}/{len(wav_files)} '
         stream(message)
+
+    for id, text in cleaned_texts:
+        text_dict[id] = text
+
+    with open(paths.data/'text_dict.pkl', 'wb') as f:
+        pickle.dump(text_dict, f)
 
     with open(paths.data/'dataset.pkl', 'wb') as f:
         pickle.dump(dataset, f)

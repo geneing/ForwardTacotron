@@ -111,10 +111,10 @@ if __name__ == '__main__':
     tts_model.load(tts_load_path)
 
     if input_text:
-        inputs = [text_to_sequence(input_text.strip(), hp.tts_cleaner_names)]
+        inputs = [text_to_sequence(input_text.strip())]
     else:
         with open('sentences.txt') as f:
-            inputs = [text_to_sequence(l.strip(), hp.tts_cleaner_names) for l in f]
+            inputs = [text_to_sequence(l.strip()) for l in f]
 
     if args.vocoder == 'wavernn':
         voc_k = voc_model.get_step() // 1000
