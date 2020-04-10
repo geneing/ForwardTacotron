@@ -102,6 +102,13 @@ def decode_mu_law(y, mu, from_labels=True):
     x = np.sign(y) / mu * ((1 + mu) ** np.abs(y) - 1)
     return x
 
+
+def rescale_mel(m):
+    m = (m + 4) / 8
+    np.clip(m, 0, 1, out=m)
+    return m
+
+
 def reconstruct_waveform(mel, n_iter=32):
     """Uses Griffin-Lim phase reconstruction to convert from a normalized
     mel spectrogram back into a waveform."""

@@ -312,11 +312,6 @@ class Tacotron(nn.Module):
 
         self.step += 1
 
-        if generate_gta:
-            self.eval()
-        else:
-            self.train()
-
         batch_size, _, steps  = m.size()
 
         # Initialise all hidden states and pack into tuple

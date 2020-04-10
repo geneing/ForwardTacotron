@@ -28,7 +28,7 @@ class Paths:
         self.tts_latest_optim = self.tts_checkpoints/'latest_optim.pyt'
         self.tts_output = self.base/'model_outputs'/f'{tts_id}.tacotron'
         self.tts_step = self.tts_checkpoints/'step.npy'
-        self.tts_log = self.tts_checkpoints/'log.txt'
+        self.tts_log = self.tts_checkpoints/'tensorboard'
         self.tts_attention = self.tts_checkpoints/'attention'
         self.tts_mel_plot = self.tts_checkpoints/'mel_plots'
 

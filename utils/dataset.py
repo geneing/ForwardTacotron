@@ -98,41 +98,50 @@ def collate_vocoder(batch):
 ###################################################################################
 
 
-def get_taco_datasets(path: Path, batch_size, r, alignments=False):
+def get_tts_datasets(path: Path, batch_size, r, model_type='tacotron'):
+    train_data = unpickle_binary(path/'train_dataset.pkl')
+    val_data = unpickle_binary(path/'val_dataset.pkl')
+    train_ids, train_lens = filter_max_len(train_data)
+    val_ids, val_lens = filter_max_len(val_data)
+    text_dict = unpickle_binary(path/'text_dict.pkl')
+    if model_type == 'tacotron':
+        train_dataset = TacoDataset(path, train_ids, text_dict)
+        val_dataset = TacoDataset(path, val_ids, text_dict)
+    elif model_type == 'forward':
+        train_dataset = ForwardDataset(path, train_ids, text_dict)
+        val_dataset = ForwardDataset(path, val_ids, text_dict)
+    else:
+        raise ValueError(f'Unknown model: {model_type}, must be either [tacotron, forward]!')
 
-    train_dataset = unpickle_binary(path/'train_dataset.pkl')
-    val_dataset = unpickle_binary(path/'val_dataset.pkl')
-
-    dataset_ids = []
-    mel_lengths = []
-
-    for (item_id, len) in train_dataset:
-        if len <= hp.tts_max_mel_len:
-            dataset_ids += [item_id]
-            mel_lengths += [len]
-
-    with open(path/'text_dict.pkl', 'rb') as f:
-        text_dict = pickle.load(f)
-
-    train_dataset = TacoDataset(path, dataset_ids, text_dict)
-
-    sampler = BinnedLengthSampler(mel_lengths, batch_size, batch_size * 3)
+    train_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size * 3)
 
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_tts(batch, r),
                            batch_size=batch_size,
-                           sampler=sampler,
+                           sampler=train_sampler,
                            num_workers=1,
                            pin_memory=True)
 
-    longest = mel_lengths.index(max(mel_lengths))
+    val_set = DataLoader(val_dataset,
+                         collate_fn=lambda batch: collate_tts(batch, r),
+                         batch_size=8,
+                         sampler=None,
+                         num_workers=1,
+                         shuffle=False,
+                         pin_memory=True)
 
-    # Used to evaluate attention during training process
-    attn_example = dataset_ids[longest]
+    return train_set, val_set
 
-    # print(attn_example)
-    return train_set, attn_example
 
+def filter_max_len(dataset):
+    dataset_ids = []
+    mel_lengths = []
+    for item_id, mel_len in dataset:
+        if mel_len <= hp.tts_max_mel_len:
+            dataset_ids += [item_id]
+            mel_lengths += [mel_len]
+    return dataset_ids, mel_lengths
+    
 
 class TacoDataset(Dataset):
 

@@ -1,4 +1,5 @@
 import matplotlib as mpl
+from matplotlib.figure import Figure
 mpl.use('agg')  # Use non-interactive backend by default
 import matplotlib.pyplot as plt
 import time
@@ -111,6 +112,19 @@ def plot(array):
     mpl.interactive(False)
 
 
+def plot_mel(mel: np.array) -> Figure:
+    mel = np.flip(mel, axis=0)
+    fig = plt.figure(figsize=(12, 6), dpi=150)
+    plt.imshow(mel, interpolation='nearest', aspect='auto')
+    return fig
+
+
+def plot_attention(attn: np.array) -> Figure:
+    fig = plt.figure(figsize=(12, 6))
+    plt.imshow(attn.T, interpolation='nearest', aspect='auto')
+    return fig
+
+
 def plot_spec(M):
     mpl.interactive(True)
     M = np.flip(M, axis=0)
@@ -119,13 +133,3 @@ def plot_spec(M):
     plt.show()
     mpl.interactive(False)
 
-
-def time_it(f):
-    def apply_func(*args, **kwargs):
-        t_start = time.time()
-        result = f(*args, **kwargs)
-        t_end = time.time()
-        dur = round(t_end - t_start, ndigits=2)
-        print(f'{f} took {dur}s')
-        return result
-    return apply_func

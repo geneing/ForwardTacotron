@@ -3,7 +3,7 @@ from torch import optim
 import torch.nn.functional as F
 from utils import hparams as hp
 from utils.display import *
-from utils.dataset import get_taco_datasets
+from utils.dataset import get_tts_datasets
 from utils.paths import Paths
 from models.tacotron import Tacotron
 import argparse
@@ -97,21 +97,21 @@ def main():
                             ('Learning Rate', lr),
                             ('Outputs/Step (r)', model.r)])
 
-            train_set, attn_example = get_taco_datasets(paths.data, batch_size, r)
-            tts_train_loop(paths, model, optimizer, train_set, lr, training_steps, attn_example)
+            train_set, val_set = get_tts_datasets(paths.data, batch_size, r)
+            tts_train_loop(paths, model, optimizer, train_set, lr, training_steps, val_set)
 
         print('Training Complete.')
         print('To continue training increase tts_total_steps in hparams.py or use --force_train\n')
 
     if force_gta:
         print('Creating Ground Truth Aligned Dataset...\n')
-        train_set, attn_example = get_taco_datasets(paths.data, 8, model.r)
+        train_set, attn_example = get_tts_datasets(paths.data, 8, model.r)
         create_gta_features(model, train_set, paths.gta)
         print('\n\nYou can now train WaveRNN on GTA features - use python train_wavernn.py --gta\n')
 
     if force_align:
         print('Creating Attention Alignments...\n')
-        train_set, attn_example = get_taco_datasets(paths.data, 8, model.r)
+        train_set, attn_example = get_tts_datasets(paths.data, 8, model.r)
         create_align_features(model, train_set, paths.alg)
         print('\n\nYou can now train ForwardTacotron - use python train_forward.py\n')
 
