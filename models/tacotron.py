@@ -310,7 +310,8 @@ class Tacotron(nn.Module):
     def forward(self, x, m, generate_gta=False):
         device = next(self.parameters()).device  # use same device as parameters
 
-        self.step += 1
+        if self.training:
+            self.step += 1
 
         batch_size, _, steps  = m.size()
 

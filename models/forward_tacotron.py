@@ -122,7 +122,8 @@ class ForwardTacotron(nn.Module):
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
-        self.step += 1
+        if self.training:
+            self.step += 1
 
         x = self.embedding(x)
         dur_hat = self.dur_pred(x)
