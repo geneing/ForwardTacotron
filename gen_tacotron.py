@@ -1,7 +1,7 @@
 import torch
 from models.fatchord_version import WaveRNN
 from utils import hparams as hp
-from utils.text.symbols import symbols
+from utils.text.symbols import phonemes
 from utils.paths import Paths
 from models.tacotron import Tacotron
 import argparse
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     # Instantiate Tacotron Model
     tts_model = Tacotron(embed_dims=hp.tts_embed_dims,
-                         num_chars=len(symbols),
+                         num_chars=len(phonemes),
                          encoder_dims=hp.tts_encoder_dims,
                          decoder_dims=hp.tts_decoder_dims,
                          n_mels=hp.num_mels,

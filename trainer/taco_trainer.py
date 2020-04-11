@@ -2,40 +2,17 @@ import time
 
 import torch
 import torch.nn.functional as F
-import numpy as np
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from models.tacotron import Tacotron
-from train_tacotron import np_now
+from trainer.common import Averager
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
 from utils.dataset import get_tts_datasets
 from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel, plot_attention
-from utils.dsp import reconstruct_waveform, rescale_mel
-import librosa
-
-def np_now(x: torch.Tensor):
-    return x.detach().cpu().numpy()
-
-
-class Averager:
-
-    def __init__(self):
-        self.count = 0
-        self.val = 0.
-
-    def add(self, val):
-        self.val += float(val)
-        self.count += 1
-
-    def reset(self):
-        self.val = 0.
-        self.count = 0
-
-    def get(self):
-        return self.val / self.count
+from utils.dsp import reconstruct_waveform, rescale_mel, np_now
 
 
 class Session:
@@ -81,11 +58,11 @@ class TacoTrainer:
         training_steps = session.max_step - current_step
         total_iters = len(session.train_set)
         epochs = training_steps // total_iters + 1
+        model.r = session.r
         simple_table([(f'Steps with r={session.r}', str(training_steps // 1000) + 'k Steps'),
                       ('Batch Size', session.bs),
                       ('Learning Rate', session.lr),
                       ('Outputs/Step (r)', model.r)])
-        model.r = session.r
         for g in optimizer.param_groups:
             g['lr'] = session.lr
 

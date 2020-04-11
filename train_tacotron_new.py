@@ -1,18 +1,67 @@
 import argparse
+import itertools
+from pathlib import Path
 
-import numpy as np
 import torch
 from torch import optim
-
+from torch.utils.data.dataloader import DataLoader
 from models.tacotron import Tacotron
-from trainer import TacoTrainer
+from trainer.taco_trainer import TacoTrainer
 from utils import hparams as hp
 from utils.checkpoints import restore_checkpoint
+from utils.dataset import get_tts_datasets
+from utils.display import *
+from utils.dsp import np_now
 from utils.paths import Paths
 from utils.text import phonemes
 
 
-def np_now(x: torch.Tensor): return x.detach().cpu().numpy()
+def create_gta_features(model: Tacotron,
+                        train_set: DataLoader,
+                        val_set: DataLoader,
+                        save_path: Path):
+    device = next(model.parameters()).device  # use same device as model parameters
+    iters = len(train_set) + len((val_set))
+    dataset = itertools.chain(train_set, val_set)
+    for i, (x, mels, ids, mel_lens) in enumerate(dataset, 1):
+        x, mels = x.to(device), mels.to(device)
+        with torch.no_grad():
+            _, gta, _ = model(x, mels)
+        gta = gta.cpu().numpy()
+        for j, item_id in enumerate(ids):
+            mel = gta[j][:, :mel_lens[j]]
+            mel = (mel + 4) / 8
+            np.save(str(save_path/f'{item_id}.npy'), mel, allow_pickle=False)
+        bar = progbar(i, iters)
+        msg = f'{bar} {i}/{iters} Batches '
+        stream(msg)
+
+
+def create_align_features(model: Tacotron,
+                          train_set: DataLoader,
+                          val_set: DataLoader,
+                          save_path: Path):
+    assert model.r == 1, f'Reduction factor of tacotron must be 1 for creating alignment features! ' \
+                         f'Reduction factor was: {model.r}'
+    device = next(model.parameters()).device  # use same device as model parameters
+    iters = len(train_set) + len(val_set)
+    dataset = itertools.chain(train_set, val_set)
+    for i, (x, mels, ids, mel_lens, _) in enumerate(dataset, 1):
+        x, mels = x.to(device), mels.to(device)
+        with torch.no_grad():
+            _, _, attn = model(x, mels)
+        attn = np_now(attn)
+        bs, chars = attn.shape[0], attn.shape[2]
+        argmax = np.argmax(attn[:, :, :], axis=2)
+        mel_counts = np.zeros(shape=(bs, chars), dtype=np.int32)
+        for b in range(attn.shape[0]):
+            count = np.bincount(argmax[b, :])
+            mel_counts[b, :len(count)] = count[:len(count)]
+        for j, item_id in enumerate(ids):
+            np.save(str(save_path / f'{item_id}.npy'), mel_counts[j, :], allow_pickle=False)
+        bar = progbar(i, iters)
+        msg = f'{bar} {i}/{iters} Batches '
+        stream(msg)
 
 
 if __name__ == '__main__':
@@ -60,14 +109,24 @@ if __name__ == '__main__':
 
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
-    print(f'num params {params}')
+    print(f'Num Params: {params}')
 
     optimizer = optim.Adam(model.parameters())
     restore_checkpoint('tts', paths, model, optimizer, create_if_missing=True)
 
-    trainer = TacoTrainer(paths)
-
-    trainer.train(model, optimizer)
+    if force_gta:
+        print('Creating Ground Truth Aligned Dataset...\n')
+        train_set, val_set = get_tts_datasets(paths.data, 8, model.r)
+        create_gta_features(model, train_set, val_set, paths.gta)
+        print('\n\nYou can now train WaveRNN on GTA features - use python train_wavernn.py --gta\n')
+    elif force_align:
+        print('Creating Attention Alignments...\n')
+        train_set, val_set = get_tts_datasets(paths.data, 8, model.r)
+        create_align_features(model, train_set, val_set, paths.alg)
+        print('\n\nYou can now train ForwardTacotron - use python train_forward.py\n')
+    else:
+        trainer = TacoTrainer(paths)
+        trainer.train(model, optimizer)
 
 
 

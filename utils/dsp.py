@@ -1,4 +1,5 @@
 import math
+import torch
 import numpy as np
 import librosa
 from utils import hparams as hp
@@ -107,6 +108,9 @@ def rescale_mel(m):
     m = (m + 4) / 8
     np.clip(m, 0, 1, out=m)
     return m
+
+
+def np_now(x: torch.Tensor): return x.detach().cpu().numpy()
 
 
 def reconstruct_waveform(mel, n_iter=32):
