@@ -2,6 +2,7 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from trainer.common import Averager, Session
 from utils import hparams as hp
@@ -12,20 +13,20 @@ from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now
 
 
-class TacoTrainer:
+class ForwardTrainer:
 
     def __init__(self, paths):
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.tts_log, comment='v1')
 
     def train(self, model, optimizer):
-        for i, session_params in enumerate(hp.tts_schedule, 1):
-            r, lr, max_step, bs = session_params
+        for i, session_params in enumerate(hp.forward_schedule, 1):
+            lr, max_step, bs = session_params
             if model.get_step() < max_step:
                 train_set, val_set = get_tts_datasets(
-                    path=self.paths.data, batch_size=bs, r=r, model_type='tacotron')
+                    path=self.paths.data, batch_size=bs, r=1, model_type='forward')
                 session = Session(
-                    index=i, r=r, lr=lr, max_step=max_step,
+                    index=i, r=1, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)
 
@@ -34,51 +35,54 @@ class TacoTrainer:
         training_steps = session.max_step - current_step
         total_iters = len(session.train_set)
         epochs = training_steps // total_iters + 1
-        model.r = session.r
-        simple_table([(f'Steps with r={session.r}', str(training_steps // 1000) + 'k Steps'),
+        simple_table([(f'Steps', str(training_steps // 1000) + 'k Steps'),
                       ('Batch Size', session.bs),
-                      ('Learning Rate', session.lr),
-                      ('Outputs/Step (r)', model.r)])
+                      ('Learning Rate', session.lr)])
+
         for g in optimizer.param_groups:
             g['lr'] = session.lr
 
-        loss_avg = Averager()
+        m_loss_avg = Averager()
+        dur_loss_avg = Averager()
         duration_avg = Averager()
         device = next(model.parameters()).device  # use same device as model parameters
         for e in range(1, epochs + 1):
-            for i, (x, m, ids, _) in enumerate(session.train_set, 1):
+            for i, (x, m, ids, lens, dur) in enumerate(session.train_set, 1):
                 start = time.time()
                 model.train()
-                x, m = x.to(device), m.to(device)
+                x, m, dur = x.to(device), m.to(device), dur.to(device)
 
-                m1_hat, m2_hat, attention = model(x, m)
+                m1_hat, m2_hat, dur_hat = model(x, m, dur)
 
                 m1_loss = F.l1_loss(m1_hat, m)
                 m2_loss = F.l1_loss(m2_hat, m)
-                loss = m1_loss + m2_loss
+                dur_loss = F.l1_loss(dur_hat, dur)
+
+                loss = m1_loss + m2_loss + dur_loss
                 optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), hp.tts_clip_grad_norm)
                 optimizer.step()
-                loss_avg.add(loss.item())
+                m_loss_avg.add(m1_loss.item() + m2_loss.item())
+                dur_loss_avg.add(dur_loss.item())
                 step = model.get_step()
                 k = step // 1000
 
                 duration_avg.add(time.time() - start)
                 speed = 1. / duration_avg.get()
-                msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Loss: {loss_avg.get():#.4} ' \
-                      f'| {speed:#.2} steps/s | Step: {k}k | '
+                msg = f'| Epoch: {e}/{epochs} ({i}/{total_iters}) | Mel Loss: {m_loss_avg.get():#.4} ' \
+                      f'| Dur Loss: {dur_loss_avg.get():#.4} | {speed:#.2} steps/s | Step: {k}k | '
 
-                if step % hp.tts_checkpoint_every == 0:
-                    ckpt_name = f'taco_step{k}K'
-                    save_checkpoint('tts', self.paths, model, optimizer,
+                if step % hp.forward_checkpoint_every == 0:
+                    ckpt_name = f'forward_step{k}K'
+                    save_checkpoint('forward', self.paths, model, optimizer,
                                     name=ckpt_name, is_silent=True)
 
-                if step % hp.tts_plot_every == 0:
+                if step % hp.forward_plot_every == 0:
+                    stream(msg + 'generating plots...')
                     self.generate_plots(model, session)
 
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
-                self.writer.add_scalar('Params/reduction_factor', session.r, model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
@@ -94,10 +98,10 @@ class TacoTrainer:
         model.eval()
         val_loss = 0
         device = next(model.parameters()).device
-        for i, (x, m, ids, _) in enumerate(val_set, 1):
-            x, m = x.to(device), m.to(device)
+        for i, (x, m, ids, lens, dur) in enumerate(val_set, 1):
+            x, m, dur = x.to(device), m.to(device), dur.to(device)
             with torch.no_grad():
-                m1_hat, m2_hat, attention = model(x, m)
+                m1_hat, m2_hat, attention = model(x, m, dur)
                 m1_loss = F.l1_loss(m1_hat, m)
                 m2_loss = F.l1_loss(m2_hat, m)
                 val_loss += m1_loss.item() + m2_loss.item()
@@ -107,21 +111,18 @@ class TacoTrainer:
     def generate_plots(self, model, session):
         model.eval()
         device = next(model.parameters()).device
-        x, m, ids, lens = session.val_sample
-        x, m = x.to(device), m.to(device)
+        x, m, ids, lens, dur = session.val_sample
+        x, m, dur = x.to(device), m.to(device), dur.to(device)
 
-        m1_hat, m2_hat, att = model(x, m)
-        att = np_now(att)[0]
+        m1_hat, m2_hat, dur_hat = model(x, m, dur)
         m1_hat = np_now(m1_hat)[0, :600, :]
         m2_hat = np_now(m2_hat)[0, :600, :]
         m = np_now(m)[0, :600, :]
 
-        att_fig = plot_attention(att)
         m1_hat_fig = plot_mel(m1_hat)
         m2_hat_fig = plot_mel(m2_hat)
         m_fig = plot_mel(m)
 
-        self.writer.add_figure('Ground_Truth_Aligned/attention', att_fig, model.step)
         self.writer.add_figure('Ground_Truth_Aligned/target', m_fig, model.step)
         self.writer.add_figure('Ground_Truth_Aligned/linear', m1_hat_fig, model.step)
         self.writer.add_figure('Ground_Truth_Aligned/postnet', m2_hat_fig, model.step)
@@ -137,13 +138,11 @@ class TacoTrainer:
             tag='Ground_Truth_Aligned/postnet_wav', snd_tensor=m2_hat_wav,
             global_step=model.step, sample_rate=hp.sample_rate)
 
-        m1_hat, m2_hat, att = model.generate(x[0].tolist(), steps=lens[0] + 20)
+        m1_hat, m2_hat, dur_hat = model.generate(x[0].tolist(), steps=lens[0] + 20)
         m1_hat, m2_hat = rescale_mel(m1_hat), rescale_mel(m2_hat)
-        att_fig = plot_attention(att)
         m1_hat_fig = plot_mel(m1_hat)
         m2_hat_fig = plot_mel(m2_hat)
 
-        self.writer.add_figure('Generated/attention', att_fig, model.step)
         self.writer.add_figure('Generated/target', m_fig, model.step)
         self.writer.add_figure('Generated/linear', m1_hat_fig, model.step)
         self.writer.add_figure('Generated/postnet', m2_hat_fig, model.step)

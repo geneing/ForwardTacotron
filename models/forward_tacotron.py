@@ -122,7 +122,6 @@ class ForwardTacotron(nn.Module):
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
-        self.train()
         self.step += 1
 
         x = self.embedding(x)
@@ -172,7 +171,7 @@ class ForwardTacotron(nn.Module):
 
         x_post = x_post.squeeze()
         x_post = x_post.cpu().data.numpy()
-        return x_post
+        return x, x_post, dur
 
     def pad(self, x, max_len):
         x = x[:, :, :max_len]

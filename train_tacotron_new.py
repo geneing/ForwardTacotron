@@ -21,7 +21,7 @@ def create_gta_features(model: Tacotron,
                         val_set: DataLoader,
                         save_path: Path):
     device = next(model.parameters()).device  # use same device as model parameters
-    iters = len(train_set) + len((val_set))
+    iters = len(train_set) + len(val_set)
     dataset = itertools.chain(train_set, val_set)
     for i, (x, mels, ids, mel_lens) in enumerate(dataset, 1):
         x, mels = x.to(device), mels.to(device)
@@ -46,7 +46,7 @@ def create_align_features(model: Tacotron,
     device = next(model.parameters()).device  # use same device as model parameters
     iters = len(train_set) + len(val_set)
     dataset = itertools.chain(train_set, val_set)
-    for i, (x, mels, ids, mel_lens, _) in enumerate(dataset, 1):
+    for i, (x, mels, ids, mel_lens) in enumerate(dataset, 1):
         x, mels = x.to(device), mels.to(device)
         with torch.no_grad():
             _, _, attn = model(x, mels)
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     print(f'Num Params: {params}')
 
     optimizer = optim.Adam(model.parameters())
-    restore_checkpoint('tts', paths, model, optimizer, create_if_missing=True)
+    restore_checkpoint('tts', paths, model, optimizer, create_if_missing=True, device=device)
 
     if force_gta:
         print('Creating Ground Truth Aligned Dataset...\n')

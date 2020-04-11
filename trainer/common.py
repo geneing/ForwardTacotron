@@ -1,3 +1,24 @@
+from torch.utils.data.dataloader import DataLoader
+
+
+class Session:
+
+    def __init__(self,
+                 index: int,
+                 r: int,
+                 lr: int,
+                 max_step: int,
+                 bs: int,
+                 train_set: DataLoader,
+                 val_set: DataLoader) -> None:
+        self.index = index
+        self.r = r
+        self.lr = lr
+        self.max_step = max_step
+        self.bs = bs
+        self.train_set = train_set
+        self.val_set = val_set
+        self.val_sample = next(iter(val_set))
 
 
 class Averager:

@@ -80,7 +80,7 @@ def save_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
 
 
 def restore_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
-        name=None, create_if_missing=False):
+        name=None, create_if_missing=False, device='cuda'):
     """Restores from a training session saved to disk.
 
     NOTE: The optimizer's state is placed on the same device as it's model
@@ -124,7 +124,8 @@ def restore_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
         print(f'Loading {s} weights: {path_dict["w"]}')
         model.load(path_dict['w'])
         print(f'Loading {s} optimizer state: {path_dict["o"]}')
-        optimizer.load_state_dict(torch.load(path_dict['o']))
+        optimizer.load_state_dict(torch.load(path_dict['o'], map_location=device))
+        print(f'Loaded model at step: {model.get_step()}')
     elif create_if_missing:
         save_checkpoint(checkpoint_type, paths, model, optimizer, name=name, is_silent=False)
     else:
