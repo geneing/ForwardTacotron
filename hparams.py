@@ -95,7 +95,7 @@ tts_schedule = [(10,  1e-3,  10_000,  32),   # progressive training schedule
 tts_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
 tts_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed
 tts_checkpoint_every = 10_000        # checkpoints the model every X steps
-tts_plot_every = 100
+tts_plot_every = 1000
 
 # ------------------------------------------------------------------------------------------------------------------#
 
@@ -123,7 +123,7 @@ forward_schedule = [(1e-3, 10_000,  32),    # progressive training schedule
 forward_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
 forward_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed
 forward_checkpoint_every = 10_000        # checkpoints the model every X steps
-forward_plot_every = 500
+forward_plot_every = 1000
 
 # ------------------------------------------------------------------------------------------------------------------#
 
