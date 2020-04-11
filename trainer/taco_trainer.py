@@ -86,8 +86,9 @@ class TacoTrainer:
 
             val_loss = self.evaluate(model, session.val_set)
             self.writer.add_scalar('Loss/val', val_loss, model.get_step())
-
             save_checkpoint('tts', self.paths, model, optimizer, is_silent=True)
+
+            loss_avg.reset()
             print(' ')
 
     def evaluate(self, model, val_set) -> float:
@@ -101,7 +102,7 @@ class TacoTrainer:
                 m1_loss = F.l1_loss(m1_hat, m)
                 m2_loss = F.l1_loss(m2_hat, m)
                 val_loss += m1_loss.item() + m2_loss.item()
-        return float(val_loss / len(val_set))
+        return val_loss / len(val_set)
 
     @ignore_exception
     def generate_plots(self, model, session):

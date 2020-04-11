@@ -1,4 +1,5 @@
 import time
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
@@ -17,7 +18,7 @@ class ForwardTrainer:
 
     def __init__(self, paths):
         self.paths = paths
-        self.writer = SummaryWriter(log_dir=paths.tts_log, comment='v1')
+        self.writer = SummaryWriter(log_dir=paths.forward_log, comment='v1')
 
     def train(self, model, optimizer):
         for i, session_params in enumerate(hp.forward_schedule, 1):
@@ -82,30 +83,37 @@ class ForwardTrainer:
                     stream(msg + 'generating plots...')
                     self.generate_plots(model, session)
 
-                self.writer.add_scalar('Loss/train', loss, model.get_step())
+                self.writer.add_scalar('Loss/train_mel', m1_loss + m2_loss, model.get_step())
+                self.writer.add_scalar('Loss/train_dur', dur_loss, model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
                 stream(msg)
 
-            val_loss = self.evaluate(model, session.val_set)
-            self.writer.add_scalar('Loss/val', val_loss, model.get_step())
-
+            m_val_loss, dur_val_loss = self.evaluate(model, session.val_set)
+            self.writer.add_scalar('Loss/val_dur', m_val_loss, model.get_step())
+            self.writer.add_scalar('Loss/val_mel', m_val_loss, model.get_step())
             save_checkpoint('tts', self.paths, model, optimizer, is_silent=True)
+
+            m_loss_avg.reset()
+            duration_avg.reset()
             print(' ')
 
-    def evaluate(self, model, val_set) -> float:
+    def evaluate(self, model, val_set) -> Tuple[float, float]:
         model.eval()
-        val_loss = 0
+        m_val_loss = 0
+        dur_val_loss = 0
         device = next(model.parameters()).device
         for i, (x, m, ids, lens, dur) in enumerate(val_set, 1):
             x, m, dur = x.to(device), m.to(device), dur.to(device)
             with torch.no_grad():
-                m1_hat, m2_hat, attention = model(x, m, dur)
+                m1_hat, m2_hat, dur_hat = model(x, m, dur)
                 m1_loss = F.l1_loss(m1_hat, m)
                 m2_loss = F.l1_loss(m2_hat, m)
-                val_loss += m1_loss.item() + m2_loss.item()
-        return float(val_loss / len(val_set))
+                dur_loss = F.l1_loss(dur_hat, dur)
+                m_val_loss += m1_loss.item() + m2_loss.item()
+                dur_val_loss += dur_loss.item()
+        return m_val_loss / len(val_set), dur_val_loss / len(val_set)
 
     @ignore_exception
     def generate_plots(self, model, session):
@@ -138,7 +146,7 @@ class ForwardTrainer:
             tag='Ground_Truth_Aligned/postnet_wav', snd_tensor=m2_hat_wav,
             global_step=model.step, sample_rate=hp.sample_rate)
 
-        m1_hat, m2_hat, dur_hat = model.generate(x[0].tolist(), steps=lens[0] + 20)
+        m1_hat, m2_hat, dur_hat = model.generate(x[0].tolist())
         m1_hat, m2_hat = rescale_mel(m1_hat), rescale_mel(m2_hat)
         m1_hat_fig = plot_mel(m1_hat)
         m2_hat_fig = plot_mel(m2_hat)

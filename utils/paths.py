@@ -38,7 +38,7 @@ class Paths:
         self.forward_latest_optim = self.forward_checkpoints/'latest_optim.pyt'
         self.forward_output = self.base/'model_outputs'/f'{tts_id}.forward'
         self.forward_step = self.forward_checkpoints/'step.npy'
-        self.forward_log = self.forward_checkpoints/'log.txt'
+        self.forward_log = self.forward_checkpoints/'tensorboard'
         self.forward_attention = self.forward_checkpoints/'attention'
         self.forward_mel_plot = self.forward_checkpoints/'mel_plots'
 
