@@ -91,8 +91,8 @@ class ForwardTrainer:
                 stream(msg)
 
             m_val_loss, dur_val_loss = self.evaluate(model, session.val_set)
-            self.writer.add_scalar('Loss/val_dur', m_val_loss, model.get_step())
             self.writer.add_scalar('Loss/val_mel', m_val_loss, model.get_step())
+            self.writer.add_scalar('Loss/val_dur', m_val_loss, model.get_step())
             save_checkpoint('tts', self.paths, model, optimizer, is_silent=True)
 
             m_loss_avg.reset()
