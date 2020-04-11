@@ -4,8 +4,6 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
-from models.tacotron import Tacotron
 from trainer.common import Averager
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
@@ -42,12 +40,11 @@ class TacoTrainer:
         self.writer = SummaryWriter(log_dir=paths.tts_log, comment='v1')
 
     def train(self, model, optimizer):
-        model_type = 'tacotron' if isinstance(model, Tacotron) else 'forward'
         for i, session_params in enumerate(hp.tts_schedule, 1):
             r, lr, max_step, bs = session_params
             if model.get_step() < max_step:
                 train_set, val_set = get_tts_datasets(
-                    path=self.paths.data, batch_size=bs, r=r, model_type=model_type)
+                    path=self.paths.data, batch_size=bs, r=r, model_type='tacotron')
                 session = Session(
                     index=i, r=r, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
@@ -75,7 +72,9 @@ class TacoTrainer:
                 start = time.time()
                 model.train()
                 x, m = x.to(device), m.to(device)
+
                 m1_hat, m2_hat, attention = model(x, m)
+
                 m1_loss = F.l1_loss(m1_hat, m)
                 m2_loss = F.l1_loss(m2_hat, m)
                 loss = m1_loss + m2_loss
