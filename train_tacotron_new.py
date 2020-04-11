@@ -20,6 +20,7 @@ def create_gta_features(model: Tacotron,
                         train_set: DataLoader,
                         val_set: DataLoader,
                         save_path: Path):
+    model.eval()
     device = next(model.parameters()).device  # use same device as model parameters
     iters = len(train_set) + len(val_set)
     dataset = itertools.chain(train_set, val_set)
@@ -43,6 +44,7 @@ def create_align_features(model: Tacotron,
                           save_path: Path):
     assert model.r == 1, f'Reduction factor of tacotron must be 1 for creating alignment features! ' \
                          f'Reduction factor was: {model.r}'
+    model.eval()
     device = next(model.parameters()).device  # use same device as model parameters
     iters = len(train_set) + len(val_set)
     dataset = itertools.chain(train_set, val_set)
