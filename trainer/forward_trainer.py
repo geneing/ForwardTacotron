@@ -80,19 +80,18 @@ class ForwardTrainer:
                                     name=ckpt_name, is_silent=True)
 
                 if step % hp.forward_plot_every == 0:
-                    stream(msg + 'generating plots...')
                     self.generate_plots(model, session)
 
-                self.writer.add_scalar('Loss/train_mel', m1_loss + m2_loss, model.get_step())
-                self.writer.add_scalar('Loss/train_dur', dur_loss, model.get_step())
+                self.writer.add_scalar('Mel_Loss/train', m1_loss + m2_loss, model.get_step())
+                self.writer.add_scalar('Duration_Loss/train', dur_loss, model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
                 stream(msg)
 
             m_val_loss, dur_val_loss = self.evaluate(model, session.val_set)
-            self.writer.add_scalar('Loss/val_mel', m_val_loss, model.get_step())
-            self.writer.add_scalar('Loss/val_dur', m_val_loss, model.get_step())
+            self.writer.add_scalar('Mel_Loss/val', m_val_loss, model.get_step())
+            self.writer.add_scalar('Duration_Loss/val', m_val_loss, model.get_step())
             save_checkpoint('tts', self.paths, model, optimizer, is_silent=True)
 
             m_loss_avg.reset()
