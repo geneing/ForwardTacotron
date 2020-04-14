@@ -14,11 +14,39 @@ from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now
 
 
+
+# Adapted from https://gist.github.com/jihunchoi/f1434a77df9db1bb337417854b398df1
+def pad_mask(lens, max_len):
+    batch_size = lens.size(0)
+    seq_range = torch.arange(0, max_len).long()
+    seq_range = seq_range.unsqueeze(0)
+    seq_range = seq_range.expand(batch_size, max_len)
+    if lens.is_cuda:
+        seq_range = seq_range.cuda()
+    lens = lens.unsqueeze(1)
+    lens = lens.expand_as(seq_range)
+    mask = seq_range < lens
+    return mask.float()
+
+
+class MaskedL1(torch.nn.Module):
+
+    def forward(self, x, target, lens):
+        target.requires_grad = False
+        max_len = target.size(1)
+        mask = pad_mask(lens, max_len)
+        mask = mask.unsqueeze(2).expand_as(x)
+        loss = F.l1_loss(
+            x * mask, target * mask, reduction='sum')
+        return loss / mask.sum()
+
+
 class ForwardTrainer:
 
     def __init__(self, paths):
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.forward_log, comment='v1')
+        self.l1_loss = MaskedL1()
 
     def train(self, model, optimizer):
         for i, session_params in enumerate(hp.forward_schedule, 1):
@@ -55,9 +83,9 @@ class ForwardTrainer:
 
                 m1_hat, m2_hat, dur_hat = model(x, m, dur)
 
-                m1_loss = F.l1_loss(m1_hat, m)
-                m2_loss = F.l1_loss(m2_hat, m)
-                dur_loss = F.l1_loss(dur_hat, dur)
+                m1_loss = self.l1_loss(m1_hat, m)
+                m2_loss = self.l1_loss(m2_hat, m)
+                dur_loss = self.l1_loss(dur_hat, dur)
 
                 loss = m1_loss + m2_loss + dur_loss
                 optimizer.zero_grad()
@@ -107,9 +135,9 @@ class ForwardTrainer:
             x, m, dur = x.to(device), m.to(device), dur.to(device)
             with torch.no_grad():
                 m1_hat, m2_hat, dur_hat = model(x, m, dur)
-                m1_loss = F.l1_loss(m1_hat, m)
-                m2_loss = F.l1_loss(m2_hat, m)
-                dur_loss = F.l1_loss(dur_hat, dur)
+                m1_loss = self.l1_loss(m1_hat, m)
+                m2_loss = self.l1_loss(m2_hat, m)
+                dur_loss = self.l1_loss(dur_hat, dur)
                 m_val_loss += m1_loss.item() + m2_loss.item()
                 dur_val_loss += dur_loss.item()
         return m_val_loss / len(val_set), dur_val_loss / len(val_set)
