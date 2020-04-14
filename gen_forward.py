@@ -3,10 +3,10 @@ import torch
 from models.fatchord_version import WaveRNN
 from models.forward_tacotron import ForwardTacotron
 from utils import hparams as hp
-from utils.text.symbols import symbols
+from utils.text.symbols import phonemes
 from utils.paths import Paths
 import argparse
-from utils.text import text_to_sequence
+from utils.text import text_to_sequence, clean_text
 from utils.display import simple_table
 from utils.dsp import reconstruct_waveform, save_wav
 import numpy as np
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     print('\nInitialising Forward TTS Model...\n')
     tts_model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
-                                num_chars=len(symbols),
+                                num_chars=len(phonemes),
                                 durpred_rnn_dims=hp.forward_durpred_rnn_dims,
                                 durpred_conv_dims=hp.forward_durpred_conv_dims,
                                 rnn_dim=hp.forward_rnn_dims,
@@ -111,10 +111,12 @@ if __name__ == '__main__':
     tts_model.load(tts_load_path)
 
     if input_text:
-        inputs = [text_to_sequence(input_text.strip())]
+        text = clean_text(input_text.strip())
+        inputs = [text_to_sequence(text)]
     else:
         with open('sentences.txt') as f:
-            inputs = [text_to_sequence(l.strip()) for l in f]
+            inputs = [clean_text(l.strip()) for l in f]
+        inputs = [text_to_sequence(t) for t in inputs]
 
     if args.vocoder == 'wavernn':
         voc_k = voc_model.get_step() // 1000
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     for i, x in enumerate(inputs, 1):
 
         print(f'\n| Generating {i}/{len(inputs)}')
-        m = tts_model.generate(x, alpha=args.alpha)
+        _, m, _ = tts_model.generate(x, alpha=args.alpha)
 
         # Fix mel spectrogram scaling to be from 0 to 1
         m = (m + 4) / 8
