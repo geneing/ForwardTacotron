@@ -135,7 +135,7 @@ class ForwardTrainer:
             x, m, dur = x.to(device), m.to(device), dur.to(device)
             with torch.no_grad():
                 m1_hat, m2_hat, dur_hat = model(x, m, dur)
-                m1_loss = self.l1_loss(m1_hat, m ,lens)
+                m1_loss = self.l1_loss(m1_hat, m, lens)
                 m2_loss = self.l1_loss(m2_hat, m, lens)
                 dur_loss = F.l1_loss(dur_hat, dur)
                 m_val_loss += m1_loss.item() + m2_loss.item()

@@ -203,6 +203,8 @@ def collate_tts(batch, r):
     mel = np.stack(mel)
     ids = [x[2] for x in batch]
     mel_lens = [x[3] for x in batch]
+    mel_lens = torch.tensor(mel_lens)
+
     chars = torch.tensor(chars).long()
     mel = torch.tensor(mel)
     # scale spectrograms to -4 <--> 4
