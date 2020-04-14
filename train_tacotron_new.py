@@ -123,7 +123,7 @@ if __name__ == '__main__':
         print('\n\nYou can now train WaveRNN on GTA features - use python train_wavernn.py --gta\n')
     elif force_align:
         print('Creating Attention Alignments...\n')
-        train_set, val_set = get_tts_datasets(paths.data, 8, model.r)
+        train_set, val_set = get_tts_datasets(paths.data, 1, model.r)
         create_align_features(model, train_set, val_set, paths.alg)
         print('\n\nYou can now train ForwardTacotron - use python train_forward.py\n')
     else:
