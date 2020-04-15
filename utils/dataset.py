@@ -114,6 +114,7 @@ def get_tts_datasets(path: Path, batch_size, r, model_type='tacotron'):
         raise ValueError(f'Unknown model: {model_type}, must be either [tacotron, forward]!')
 
     train_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size * 3)
+    val_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size, shuffle=False)
 
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_tts(batch, r),
@@ -124,10 +125,9 @@ def get_tts_datasets(path: Path, batch_size, r, model_type='tacotron'):
 
     val_set = DataLoader(val_dataset,
                          collate_fn=lambda batch: collate_tts(batch, r),
-                         batch_size=8,
-                         sampler=None,
+                         batch_size=batch_size,
+                         sampler=val_sampler,
                          num_workers=1,
-                         shuffle=False,
                          pin_memory=True)
 
     return train_set, val_set
@@ -219,10 +219,11 @@ def collate_tts(batch, r):
 
 
 class BinnedLengthSampler(Sampler):
-    def __init__(self, lengths, batch_size, bin_size):
+    def __init__(self, lengths, batch_size, bin_size, shuffle=True):
         _, self.idx = torch.sort(torch.tensor(lengths).long())
         self.batch_size = batch_size
         self.bin_size = bin_size
+        self.shuffle = shuffle
         assert self.bin_size % self.batch_size == 0
 
     def __iter__(self):
@@ -236,12 +237,12 @@ class BinnedLengthSampler(Sampler):
             random.shuffle(this_bin)
             bins += [this_bin]
 
-        random.shuffle(bins)
+        if self.shuffle: random.shuffle(bins)
         binned_idx = np.stack(bins).reshape(-1)
 
         if len(binned_idx) < len(idx):
             last_bin = idx[len(binned_idx):]
-            random.shuffle(last_bin)
+            if self.shuffle: random.shuffle(last_bin)
             binned_idx = np.concatenate([binned_idx, last_bin])
 
         return iter(torch.tensor(binned_idx).long())
