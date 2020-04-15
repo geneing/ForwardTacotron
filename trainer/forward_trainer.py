@@ -84,7 +84,6 @@ class ForwardTrainer:
 
                 m1_hat, m2_hat, dur_hat = model(x, m, dur)
 
-                print(f'shape m hat {m1_hat.shape} shape m {m.shape}')
                 m1_loss = self.l1_loss(m1_hat, m, lens)
                 m2_loss = self.l1_loss(m2_hat, m, lens)
                 dur_loss = F.l1_loss(dur_hat, dur)
