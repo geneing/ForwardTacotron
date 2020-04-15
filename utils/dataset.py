@@ -114,7 +114,7 @@ def get_tts_datasets(path: Path, batch_size, r, model_type='tacotron'):
         raise ValueError(f'Unknown model: {model_type}, must be either [tacotron, forward]!')
 
     train_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size * 3)
-    val_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size, shuffle=False)
+    val_sampler = BinnedLengthSampler(val_lens, batch_size, batch_size, shuffle=False)
 
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_tts(batch, r),
