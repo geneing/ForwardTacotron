@@ -127,6 +127,7 @@ def get_tts_datasets(path: Path, batch_size, r, model_type='tacotron'):
                          batch_size=batch_size,
                          sampler=None,
                          num_workers=1,
+                         shuffle=False,
                          pin_memory=True)
 
     return train_set, val_set
