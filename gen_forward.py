@@ -98,6 +98,7 @@ if __name__ == '__main__':
                                 num_chars=len(phonemes),
                                 durpred_rnn_dims=hp.forward_durpred_rnn_dims,
                                 durpred_conv_dims=hp.forward_durpred_conv_dims,
+                                durpred_dropout=hp.forward_durpred_dropout,
                                 rnn_dim=hp.forward_rnn_dims,
                                 postnet_k=hp.forward_postnet_K,
                                 postnet_dims=hp.forward_postnet_dims,

@@ -42,7 +42,7 @@ class LengthRegulator(nn.Module):
 
 class DurationPredictor(nn.Module):
 
-    def __init__(self, in_dims, conv_dims=256, rnn_dims=64):
+    def __init__(self, in_dims, conv_dims=256, rnn_dims=64, dropout=0.1):
         super().__init__()
         self.convs = torch.nn.ModuleList([
             BatchNormConv(in_dims, conv_dims, 5, activation=torch.relu),
@@ -51,14 +51,15 @@ class DurationPredictor(nn.Module):
         ])
         self.rnn = nn.GRU(conv_dims, rnn_dims, batch_first=True, bidirectional=True)
         self.lin = nn.Linear(2 * rnn_dims, 1)
+        self.dropout = dropout
 
     def forward(self, x, alpha=1.0):
         x = x.transpose(1, 2)
         for conv in self.convs:
             x = conv(x)
-            x = F.dropout(x, p=0.1, training=self.training)
         x = x.transpose(1, 2)
         x, _ = self.rnn(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin(x)
         return x / alpha
 
@@ -86,6 +87,7 @@ class ForwardTacotron(nn.Module):
                  num_chars,
                  durpred_conv_dims,
                  durpred_rnn_dims,
+                 durpred_dropout,
                  rnn_dim,
                  prenet_k,
                  prenet_dims,
@@ -101,7 +103,8 @@ class ForwardTacotron(nn.Module):
         self.lr = LengthRegulator()
         self.dur_pred = DurationPredictor(embed_dims,
                                           conv_dims=durpred_conv_dims,
-                                          rnn_dims=durpred_rnn_dims)
+                                          rnn_dims=durpred_rnn_dims,
+                                          dropout=durpred_dropout)
         self.prenet = CBHG(K=prenet_k,
                            in_channels=embed_dims,
                            channels=prenet_dims,
