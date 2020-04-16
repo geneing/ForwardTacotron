@@ -1,6 +1,6 @@
 librosa>=0.7.2
-torch>=1.0
+torch>=1.2.0
+phonemizer>=2.2
 matplotlib
 unidecode
 inflect
-nltk
