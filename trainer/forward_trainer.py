@@ -3,42 +3,14 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from trainer.common import Averager, Session
+from trainer.common import Averager, Session, MaskedL1
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
 from utils.dataset import get_tts_datasets
 from utils.decorators import ignore_exception
-from utils.display import stream, simple_table, plot_mel, plot_attention
+from utils.display import stream, simple_table, plot_mel
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now
-
-
-
-# Adapted from https://gist.github.com/jihunchoi/f1434a77df9db1bb337417854b398df1
-def pad_mask(lens, max_len):
-    batch_size = lens.size(0)
-    seq_range = torch.arange(0, max_len).long()
-    seq_range = seq_range.unsqueeze(0)
-    seq_range = seq_range.expand(batch_size, max_len)
-    if lens.is_cuda:
-        seq_range = seq_range.cuda()
-    lens = lens.unsqueeze(1)
-    lens = lens.expand_as(seq_range)
-    mask = seq_range < lens
-    return mask.float()
-
-
-class MaskedL1(torch.nn.Module):
-
-    def forward(self, x, target, lens):
-        target.requires_grad = False
-        max_len = target.size(1)
-        mask = pad_mask(lens, max_len)
-        mask = mask.unsqueeze(2).expand_as(x)
-        loss = F.l1_loss(
-            x * mask, target * mask, reduction='sum')
-        return loss / mask.sum()
 
 
 class ForwardTrainer:
