@@ -42,7 +42,7 @@ class LengthRegulator(nn.Module):
 
 class DurationPredictor(nn.Module):
 
-    def __init__(self, in_dims, conv_dims=256, rnn_dims=64, dropout=0.1):
+    def __init__(self, in_dims, conv_dims=256, rnn_dims=64, dropout=0.5):
         super().__init__()
         self.convs = torch.nn.ModuleList([
             BatchNormConv(in_dims, conv_dims, 5, activation=torch.relu),
@@ -57,9 +57,9 @@ class DurationPredictor(nn.Module):
         x = x.transpose(1, 2)
         for conv in self.convs:
             x = conv(x)
+            x = F.dropout(x, p=self.dropout, training=self.training)
         x = x.transpose(1, 2)
         x, _ = self.rnn(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin(x)
         return x / alpha
 
