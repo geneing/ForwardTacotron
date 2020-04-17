@@ -55,7 +55,7 @@ def get_wavernn_model(model_path):
 def synthesize(input_text, tts_model, voc_model, alpha=1.0):
     text = clean_text(input_text.strip())
     x = [text_to_sequence(text)]
-    m = tts_model.generate(x, alpha=alpha)
+    _, m, _ = tts_model.generate(x, alpha=alpha)
     # Fix mel spectrogram scaling to be from 0 to 1
     m = (m + 4) / 8
     np.clip(m, 0, 1, out=m)
