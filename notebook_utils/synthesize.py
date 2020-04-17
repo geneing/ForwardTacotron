@@ -3,7 +3,7 @@ import torch
 from models.fatchord_version import WaveRNN
 from models.forward_tacotron import ForwardTacotron
 from utils.text.symbols import symbols
-from utils.text import text_to_sequence
+from utils.text import text_to_sequence, clean_text
 from utils.dsp import reconstruct_waveform
 from utils import hparams as hp
 import numpy as np
@@ -19,6 +19,7 @@ def get_forward_model(model_path):
                             num_chars=len(symbols),
                             durpred_rnn_dims=hp.forward_durpred_rnn_dims,
                             durpred_conv_dims=hp.forward_durpred_conv_dims,
+                            durpred_dropout=hp.forward_durpred_dropout,
                             rnn_dim=hp.forward_rnn_dims,
                             postnet_k=hp.forward_postnet_K,
                             postnet_dims=hp.forward_postnet_dims,
@@ -52,7 +53,8 @@ def get_wavernn_model(model_path):
 
 
 def synthesize(input_text, tts_model, voc_model, alpha=1.0):
-    x = text_to_sequence(input_text.strip(), ['english_cleaners'])
+    text = clean_text(input_text.strip())
+    x = [text_to_sequence(text)]
     m = tts_model.generate(x, alpha=alpha)
     # Fix mel spectrogram scaling to be from 0 to 1
     m = (m + 4) / 8

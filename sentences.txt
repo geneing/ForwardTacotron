@@ -1,3 +1,4 @@
+Synthetic speech can be created by concatenating pieces of recorded speech that are stored in a database. Systems differ in the size of the stored speech units; a system that stores phones or diphones provides the largest output range, but may lack clarity. For specific usage domains, the storage of entire words or sentences allows for high-quality output. Alternatively, a synthesizer can incorporate a model of the vocal tract and other human voice characteristics to create a completely "synthetic" voice output.
 In the middle of difficulty lies opportunity.
 Hello, I am a non recurrent neural network.
 Scientists at the CERN laboratory say they have discovered a new particle.
