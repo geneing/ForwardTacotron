@@ -2,7 +2,7 @@ import torch
 
 from models.fatchord_version import WaveRNN
 from models.forward_tacotron import ForwardTacotron
-from utils.text.symbols import symbols
+from utils.text.symbols import phonemes
 from utils.text import text_to_sequence, clean_text
 from utils.dsp import reconstruct_waveform
 from utils import hparams as hp
@@ -16,7 +16,7 @@ def init_hparams(hp_file):
 def get_forward_model(model_path):
     device = torch.device('cuda')
     model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
-                            num_chars=len(symbols),
+                            num_chars=len(phonemes),
                             durpred_rnn_dims=hp.forward_durpred_rnn_dims,
                             durpred_conv_dims=hp.forward_durpred_conv_dims,
                             durpred_dropout=hp.forward_durpred_dropout,
