@@ -26,7 +26,7 @@ def create_gta_features(model: Tacotron,
     device = next(model.parameters()).device  # use same device as model parameters
     iters = len(train_set) + len(val_set)
     dataset = itertools.chain(train_set, val_set)
-    for i, (x, mels, ids, mel_lens) in enumerate(dataset, 1):
+    for i, (x, mels, ids, mel_lens, dur) in enumerate(dataset, 1):
         x, mels = x.to(device), mels.to(device)
         with torch.no_grad():
             _, gta, _ = model(x, mels)
