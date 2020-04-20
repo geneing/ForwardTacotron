@@ -20,7 +20,7 @@ does not use any attention. Hence, the required memory grows linearly with text 
 
 ## UPDATE (20.04.2020)
 1. Models now use phonemes, which improves audio quality and reduces pronounciation errors.
-2. Training is now running on a train / val split and can be monitored with tensorboard (see example at the bottom)
+2. Training is now running on a train / val split and can be monitored with tensorboard (see example at the bottom).
 
 
 ## 🔈 Samples
