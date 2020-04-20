@@ -84,7 +84,7 @@ Here is what the ForwardTacotron tensorboard looks like:
   <img src="assets/tensorboard.png" width="700" />
 </p>
 <p align="center">
-  <b>Figure 1:</b> Tensorboard example for training a ForwardTacotron model.
+  <b>Figure 2:</b> Tensorboard example for training a ForwardTacotron model.
 </p>
 
 
