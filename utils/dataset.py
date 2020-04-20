@@ -33,20 +33,13 @@ class VocoderDataset(Dataset):
 
 
 def get_vocoder_datasets(path: Path, batch_size, train_gta):
-
-    with open(path/'dataset.pkl', 'rb') as f:
-        dataset = pickle.load(f)
-
-    dataset_ids = [x[0] for x in dataset]
-
-    random.seed(1234)
-    random.shuffle(dataset_ids)
-
-    test_ids = dataset_ids[-hp.voc_test_samples:]
-    train_ids = dataset_ids[:-hp.voc_test_samples]
+    train_data = unpickle_binary(path/'train_dataset.pkl')
+    val_data = unpickle_binary(path/'val_dataset.pkl')
+    train_ids, train_lens = filter_max_len(train_data)
+    val_ids, val_lens = filter_max_len(val_data)
 
     train_dataset = VocoderDataset(path, train_ids, train_gta)
-    test_dataset = VocoderDataset(path, test_ids, train_gta)
+    val_dataset = VocoderDataset(path, val_ids, train_gta)
 
     train_set = DataLoader(train_dataset,
                            collate_fn=collate_vocoder,
@@ -55,13 +48,13 @@ def get_vocoder_datasets(path: Path, batch_size, train_gta):
                            shuffle=True,
                            pin_memory=True)
 
-    test_set = DataLoader(test_dataset,
-                          batch_size=1,
-                          num_workers=1,
-                          shuffle=False,
-                          pin_memory=True)
+    val_set = DataLoader(val_dataset,
+                         batch_size=1,
+                         num_workers=1,
+                         shuffle=False,
+                         pin_memory=True)
 
-    return train_set, test_set
+    return train_set, val_set
 
 
 def collate_vocoder(batch):

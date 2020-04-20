@@ -2,7 +2,6 @@ import argparse
 import itertools
 from pathlib import Path
 
-import numpy as np
 import torch
 from torch import optim
 from torch.utils.data.dataloader import DataLoader
