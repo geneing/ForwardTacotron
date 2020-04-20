@@ -1,23 +1,42 @@
+import argparse
+import itertools
+from pathlib import Path
+
+import numpy as np
 import torch
-import traceback
-from torch import optim, nn
-import torch.nn.functional as F
+from torch import optim
+from torch.utils.data.dataloader import DataLoader
 
 from models.forward_tacotron import ForwardTacotron
+from models.tacotron import Tacotron
 from trainer.forward_trainer import ForwardTrainer
 from utils import hparams as hp
-from utils.dataset import get_tts_datasets
+from utils.checkpoints import restore_checkpoint
 from utils.display import *
-from utils.text.symbols import phonemes
 from utils.paths import Paths
-from models.tacotron import Tacotron
-import argparse
-from utils import data_parallel_workaround
-from pathlib import Path
-import time
-import numpy as np
-from utils.checkpoints import save_checkpoint, restore_checkpoint
+from utils.text.symbols import phonemes
 
+
+def create_gta_features(model: Tacotron,
+                        train_set: DataLoader,
+                        val_set: DataLoader,
+                        save_path: Path):
+    model.eval()
+    device = next(model.parameters()).device  # use same device as model parameters
+    iters = len(train_set) + len(val_set)
+    dataset = itertools.chain(train_set, val_set)
+    for i, (x, mels, ids, mel_lens) in enumerate(dataset, 1):
+        x, mels = x.to(device), mels.to(device)
+        with torch.no_grad():
+            _, gta, _ = model(x, mels)
+        gta = gta.cpu().numpy()
+        for j, item_id in enumerate(ids):
+            mel = gta[j][:, :mel_lens[j]]
+            mel = (mel + 4) / 8
+            np.save(str(save_path/f'{item_id}.npy'), mel, allow_pickle=False)
+        bar = progbar(i, iters)
+        msg = f'{bar} {i}/{iters} Batches '
+        stream(msg)
 
 if __name__ == '__main__':
     # Parse Arguments

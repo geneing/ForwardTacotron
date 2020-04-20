@@ -18,6 +18,11 @@ The model has following advantages:
 does not use any attention. Hence, the required memory grows linearly with text size, which makes it possible to synthesize large articles at once.
 
 
+## UPDATE (20.04.2020)
+1. Models now use phonemes, which improves audio quality and reduces pronounciation errors.
+2. Training is now running on a train / val split and can be monitored with tensorboard (see example at the bottom)
+
+
 ## 🔈 Samples
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
@@ -32,7 +37,11 @@ provided by the WaveRNN repo. Both models are commited in the pretrained folder.
 Make sure you have:
 
 * Python >= 3.6
-* [PyTorch 1 with CUDA](https://pytorch.org/)
+
+Install espeak as phonemizer backend (for macOS use brew):
+```
+sudo apt-get install espeak
+```
 
 Then install the rest with pip:
 ```
@@ -66,6 +75,19 @@ As in the original repo you can also use a trained WaveRNN vocoder:
 python gen_forward.py --input_text "this is whatever you want it to be" wavernn
 ```
 ____
+You can monitor the training processes with 
+```
+tensorboard --logdir checkpoints
+```
+Here is what the ForwardTacotron tensorboard looks like:
+<p align="center">
+  <img src="assets/tensorboard.png" width="700" />
+</p>
+<p align="center">
+  <b>Figure 1:</b> Tensorboard example for training a ForwardTacotron model.
+</p>
+
+
 
 ## References
 
