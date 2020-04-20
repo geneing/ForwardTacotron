@@ -75,7 +75,7 @@ As in the original repo you can also use a trained WaveRNN vocoder:
 python gen_forward.py --input_text "this is whatever you want it to be" wavernn
 ```
 ____
-You can monitor the training processes with 
+You can monitor the training processes for Tacotron and ForwardTacotron with 
 ```
 tensorboard --logdir checkpoints
 ```
