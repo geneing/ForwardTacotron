@@ -79,7 +79,7 @@ class VocTrainer:
 
                 if step % hp.voc_gen_samples_every == 0:
                     mel_loss = self.generate_samples(model, session.val_set_samples)
-                    model_name = f'wave_step{k}K_loss{mel_loss:#.5}'
+                    #model_name = f'wave_step{k}K_loss{mel_loss:#.5}'
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
@@ -150,6 +150,5 @@ class VocTrainer:
             self.writer.add_audio(
                 tag=f'Validation_Samples/generated_{val_loss:#.5}_{loss.item():#.5}_{i}',
                 snd_tensor=gen_wav, global_step=model.step, sample_rate=hp.sample_rate)
-
 
         return mel_loss
