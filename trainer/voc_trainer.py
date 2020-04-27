@@ -1,4 +1,6 @@
 import time
+import numpy as np
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
@@ -19,7 +21,7 @@ class VocTrainer:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.voc_log, comment='v1')
         self.loss_func = F.cross_entropy if hp.voc_mode == 'RAW' else discretized_mix_logistic_loss
-        self.top_k_models = {}
+        self.top_k_models = []
 
     def train(self, model, optimizer, train_gta=False):
         for i, session_params in enumerate(hp.voc_schedule, 1):
@@ -78,8 +80,17 @@ class VocTrainer:
                       f'| {speed:#.2} steps/s | Step: {k}k | '
 
                 if step % hp.voc_gen_samples_every == 0:
-                    mel_loss = self.generate_samples(model, session)
-                    #model_name = f'wave_step{k}K_loss{mel_loss:#.5}'
+                    mel_loss, gen_wavs = self.generate_samples(model, session)
+                    self.writer.add_scalar('Loss/gen_mel', mel_loss, model.get_step())
+
+                    if len(self.top_k_models) < hp.voc_keep_top_k:
+                        self.top_k_models.append((mel_loss, gen_wavs, model.get_step()))
+                        self.top_k_models.sort(key=lambda t: t[0])
+                    elif self.top_k_models[-1][0] > mel_loss:
+                        self.top_k_models.sort(key=lambda t: t[0])
+                        self.top_k_models[-1] = (mel_loss, gen_wavs, model.get_step())
+                        #save_checkpoint('voc', self.paths, model, optimizer,
+                        #                name=f'wave_top_{i}', is_silent=True)
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
@@ -118,11 +129,11 @@ class VocTrainer:
         return val_loss / len(val_set)
 
     @ignore_exception
-    def generate_samples(self, model, session) -> float:
+    def generate_samples(self, model, session) -> Tuple[float, list]:
         model.eval()
-        mel_loss = 0
+        mel_losses = []
+        gen_wavs = []
         device = next(model.parameters()).device
-        val_loss = self.evaluate(model, session.val_set)
         for i, (m, x) in enumerate(session.val_set_samples, 1):
             if i > hp.voc_gen_num_samples:
                 break
@@ -137,18 +148,24 @@ class VocTrainer:
                 target=hp.voc_target, overlap=hp.voc_overlap,
                 mu_law=hp.mu_law, silent=True)
 
+            gen_wavs.append(gen_wav)
             y_mel = raw_melspec(x.squeeze())
             y_mel = torch.tensor(y_mel).to(device)
             y_hat_mel = raw_melspec(gen_wav)
             y_hat_mel = torch.tensor(y_hat_mel).to(device)
             loss = F.l1_loss(y_hat_mel, y_mel)
-            mel_loss += loss.item()
+            mel_losses.append(loss.item())
 
             self.writer.add_audio(
                 tag=f'Validation_Samples/target_{i}', snd_tensor=x,
                 global_step=model.step, sample_rate=hp.sample_rate)
             self.writer.add_audio(
-                tag=f'Validation_Samples/generated_{val_loss:#.5}_{loss.item():#.5}_{i}',
+                tag=f'Validation_Samples/generated_{i}',
                 snd_tensor=gen_wav, global_step=model.step, sample_rate=hp.sample_rate)
 
-        return mel_loss
+        for i, mel_loss, m_step in enumerate(self.top_k_models):
+            self.writer.add_audio(
+                tag=f'Top_K_Models/generated_top_{i}',
+                snd_tensor=gen_wavs[0], global_step=m_step, sample_rate=hp.sample_rate)
+
+        return sum(mel_losses) / len(mel_losses), gen_wavs

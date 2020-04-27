@@ -80,7 +80,7 @@ def save_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
 
 
 def restore_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
-        name=None, create_if_missing=False, device='cuda'):
+        name=None, create_if_missing=False, device='cpu'):
     """Restores from a training session saved to disk.
 
     NOTE: The optimizer's state is placed on the same device as it's model
