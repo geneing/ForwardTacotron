@@ -132,16 +132,18 @@ class VocTrainer:
                 x = decode_mu_law(x, 2 ** bits, from_labels=True)
             else:
                 x = label_2_float(x, bits)
+            gen_wav = model.generate(
+                mels=m, save_path=None, batched=hp.voc_gen_batched,
+                target=hp.voc_target, overlap=hp.voc_overlap,
+                mu_law=hp.mu_law, silent=True)
+
             y_mel = raw_melspec(x.squeeze())
             y_mel = torch.tensor(y_mel).to(device)
             y_hat_mel = raw_melspec(gen_wav)
             y_hat_mel = torch.tensor(y_hat_mel).to(device)
             loss = F.l1_loss(y_hat_mel, y_mel)
             mel_loss += loss.item()
-            gen_wav = model.generate(
-                mels=m, save_path=None, batched=hp.voc_gen_batched,
-                target=hp.voc_target, overlap=hp.voc_overlap,
-                mu_law=hp.mu_law, silent=True)
+
             self.writer.add_audio(
                 tag=f'Validation_Samples/target_{i}', snd_tensor=x,
                 global_step=model.step, sample_rate=hp.sample_rate)
