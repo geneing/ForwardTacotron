@@ -75,6 +75,12 @@ def melspectrogram(y):
     S = amp_to_db(linear_to_mel(np.abs(D)))
     return normalize(S)
 
+def raw_melspec(y):
+    D = stft(y)
+    S = linear_to_mel(np.abs(D))
+    return S
+
+
 
 def stft(y):
     return librosa.stft(

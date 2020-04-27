@@ -10,7 +10,7 @@ from utils.dataset import get_tts_datasets, get_vocoder_datasets
 from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.distribution import discretized_mix_logistic_loss
-from utils.dsp import reconstruct_waveform, rescale_mel, np_now, decode_mu_law, label_2_float
+from utils.dsp import reconstruct_waveform, rescale_mel, np_now, decode_mu_law, label_2_float, raw_melspec
 
 
 class VocTrainer:
@@ -19,6 +19,7 @@ class VocTrainer:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.voc_log, comment='v1')
         self.loss_func = F.cross_entropy if hp.voc_mode == 'RAW' else discretized_mix_logistic_loss
+        self.top_k_models = {}
 
     def train(self, model, optimizer, train_gta=False):
         for i, session_params in enumerate(hp.voc_schedule, 1):
@@ -77,7 +78,8 @@ class VocTrainer:
                       f'| {speed:#.2} steps/s | Step: {k}k | '
 
                 if step % hp.voc_gen_samples_every == 0:
-                    self.generate_samples(model, session.val_set_samples)
+                    mel_loss = self.generate_samples(model, session.val_set_samples)
+                    model_name = f'wave_step{k}K_loss{mel_loss:#.5}'
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
@@ -116,29 +118,35 @@ class VocTrainer:
         return val_loss / len(val_set)
 
     @ignore_exception
-    def generate_samples(self, model, val_set_samples) -> None:
+    def generate_samples(self, model, val_set_samples) -> float:
         model.eval()
-
+        mel_loss = 0
+        device = next(model.parameters()).device
         for i, (m, x) in enumerate(val_set_samples, 1):
-
             if i > hp.voc_gen_num_samples:
                 break
-
             x = x[0].numpy()
             bits = 16 if hp.voc_mode == 'MOL' else hp.bits
             if hp.mu_law and hp.voc_mode != 'MOL':
                 x = decode_mu_law(x, 2 ** bits, from_labels=True)
             else:
                 x = label_2_float(x, bits)
-
+            y_mel = raw_melspec(x.squeeze())
+            y_mel = torch.tensor(y_mel).to(device)
+            y_hat_mel = raw_melspec(gen_wav)
+            y_hat_mel = torch.tensor(y_hat_mel).to(device)
+            loss = F.l1_loss(y_hat_mel, y_mel)
+            mel_loss += loss.item()
             gen_wav = model.generate(
                 mels=m, save_path=None, batched=hp.voc_gen_batched,
                 target=hp.voc_target, overlap=hp.voc_overlap,
                 mu_law=hp.mu_law, silent=True)
-
             self.writer.add_audio(
                 tag=f'Validation_Samples/target_{i}', snd_tensor=x,
                 global_step=model.step, sample_rate=hp.sample_rate)
             self.writer.add_audio(
-                tag=f'Validation_Samples/generated_{i}', snd_tensor=gen_wav,
+                tag=f'Validation_Samples/generated_{loss.item()}_{i}', snd_tensor=gen_wav,
                 global_step=model.step, sample_rate=hp.sample_rate)
+
+
+        return mel_loss
