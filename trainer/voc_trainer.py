@@ -78,7 +78,7 @@ class VocTrainer:
                       f'| {speed:#.2} steps/s | Step: {k}k | '
 
                 if step % hp.voc_gen_samples_every == 0:
-                    mel_loss = self.generate_samples(model, session.val_set_samples)
+                    mel_loss = self.generate_samples(model, session)
                     #model_name = f'wave_step{k}K_loss{mel_loss:#.5}'
 
                 if step % hp.voc_checkpoint_every == 0:
