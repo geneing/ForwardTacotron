@@ -42,8 +42,6 @@ def main():
 
     if not args.force_cpu and torch.cuda.is_available():
         device = torch.device('cuda')
-        if batch_size % torch.cuda.device_count() != 0:
-            raise ValueError('`batch_size` must be evenly divisible by n_gpus!')
     else:
         device = torch.device('cpu')
     print('Using device:', device)

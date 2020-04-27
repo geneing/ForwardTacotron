@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
-from trainer.common import Averager, Session, MaskedL1
+from trainer.common import Averager, TTSSession, MaskedL1
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
 from utils.dataset import get_tts_datasets
@@ -26,7 +26,7 @@ class ForwardTrainer:
             if model.get_step() < max_step:
                 train_set, val_set = get_tts_datasets(
                     path=self.paths.data, batch_size=bs, r=1, model_type='forward')
-                session = Session(
+                session = TTSSession(
                     index=i, r=1, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)

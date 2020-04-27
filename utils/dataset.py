@@ -49,12 +49,25 @@ def get_vocoder_datasets(path: Path, batch_size, train_gta):
                            pin_memory=True)
 
     val_set = DataLoader(val_dataset,
-                         batch_size=1,
+                         collate_fn=collate_vocoder,
+                         batch_size=batch_size,
                          num_workers=1,
                          shuffle=False,
                          pin_memory=True)
 
-    return train_set, val_set
+    np.random.seed(42)  # fix numpy seed to obtain the same val set every time
+    val_set = [b for b in val_set]
+
+    val_set_samples = DataLoader(val_dataset,
+                                 batch_size=1,
+                                 num_workers=1,
+                                 shuffle=False,
+                                 pin_memory=True)
+
+    val_set_samples = [s for i, s in enumerate(val_set_samples)
+                       if i < hp.voc_gen_num_samples]
+
+    return train_set, val_set, val_set_samples
 
 
 def collate_vocoder(batch):

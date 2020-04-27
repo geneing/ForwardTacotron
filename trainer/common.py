@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
 
 
-class Session:
+class TTSSession:
 
     def __init__(self,
                  index: int,
@@ -21,6 +21,25 @@ class Session:
         self.train_set = train_set
         self.val_set = val_set
         self.val_sample = next(iter(val_set))
+
+
+class VocSession:
+
+    def __init__(self,
+                 index: int,
+                 lr: int,
+                 max_step: int,
+                 bs: int,
+                 train_set: DataLoader,
+                 val_set: list,
+                 val_set_samples: list) -> None:
+        self.index = index
+        self.lr = lr
+        self.max_step = max_step
+        self.bs = bs
+        self.train_set = train_set
+        self.val_set = val_set
+        self.val_set_samples = val_set_samples
 
 
 class Averager:

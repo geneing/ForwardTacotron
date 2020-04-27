@@ -3,7 +3,7 @@ import time
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
-from trainer.common import Averager, Session
+from trainer.common import Averager, TTSSession
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
 from utils.dataset import get_tts_datasets
@@ -24,7 +24,7 @@ class TacoTrainer:
             if model.get_step() < max_step:
                 train_set, val_set = get_tts_datasets(
                     path=self.paths.data, batch_size=bs, r=r, model_type='tacotron')
-                session = Session(
+                session = TTSSession(
                     index=i, r=r, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)
@@ -89,6 +89,7 @@ class TacoTrainer:
             save_checkpoint('tts', self.paths, model, optimizer, is_silent=True)
 
             loss_avg.reset()
+            duration_avg.reset()
             print(' ')
 
     def evaluate(self, model, val_set) -> float:

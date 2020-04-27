@@ -20,7 +20,7 @@ class Paths:
         self.voc_latest_optim = self.voc_checkpoints/'latest_optim.pyt'
         self.voc_output = self.base/'model_outputs'/f'{voc_id}.wavernn'
         self.voc_step = self.voc_checkpoints/'step.npy'
-        self.voc_log = self.voc_checkpoints/'log.txt'
+        self.voc_log = self.voc_checkpoints/'tensorboard'
 
         # Tactron Paths
         self.tts_checkpoints = self.base/'checkpoints'/f'{tts_id}.tacotron'

@@ -136,7 +136,8 @@ class WaveRNN(nn.Module):
         # weights are contiguous in GPU memory. Hence, we must call it again
         self._flatten_parameters()
 
-        self.step += 1
+        if self.training:
+            self.step += 1
         bsize = x.size(0)
         h1 = torch.zeros(1, bsize, self.rnn_dims, device=device)
         h2 = torch.zeros(1, bsize, self.rnn_dims, device=device)
@@ -166,7 +167,7 @@ class WaveRNN(nn.Module):
         x = F.relu(self.fc2(x))
         return self.fc3(x)
 
-    def generate(self, mels, save_path: Union[str, Path], batched, target, overlap, mu_law):
+    def generate(self, mels, save_path: Union[str, Path], batched, target, overlap, mu_law, silent=False):
         self.eval()
 
         device = next(self.parameters()).device  # use same device as parameters
@@ -238,7 +239,8 @@ class WaveRNN(nn.Module):
                 else:
                     raise RuntimeError("Unknown model mode value - ", self.mode)
 
-                if i % 100 == 0: self.gen_display(i, seq_len, b_size, start)
+                if not silent and i % 100 == 0:
+                    self.gen_display(i, seq_len, b_size, start)
 
         output = torch.stack(output).transpose(0, 1)
         output = output.cpu().numpy()
@@ -257,7 +259,8 @@ class WaveRNN(nn.Module):
         output = output[:wave_len]
         output[-20 * self.hop_length:] *= fade_out
 
-        save_wav(output, save_path)
+        if save_path is not None:
+            save_wav(output, save_path)
 
         self.train()
 
