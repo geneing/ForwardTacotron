@@ -118,11 +118,12 @@ class VocTrainer:
         return val_loss / len(val_set)
 
     @ignore_exception
-    def generate_samples(self, model, val_set_samples) -> float:
+    def generate_samples(self, model, session) -> float:
         model.eval()
         mel_loss = 0
         device = next(model.parameters()).device
-        for i, (m, x) in enumerate(val_set_samples, 1):
+        val_loss = self.evaluate(model, session.val_set)
+        for i, (m, x) in enumerate(session.val_set_samples, 1):
             if i > hp.voc_gen_num_samples:
                 break
             x = x[0].numpy()
@@ -145,8 +146,8 @@ class VocTrainer:
                 tag=f'Validation_Samples/target_{i}', snd_tensor=x,
                 global_step=model.step, sample_rate=hp.sample_rate)
             self.writer.add_audio(
-                tag=f'Validation_Samples/generated_{loss.item()}_{i}', snd_tensor=gen_wav,
-                global_step=model.step, sample_rate=hp.sample_rate)
+                tag=f'Validation_Samples/generated_{val_loss:#.5}_{loss.item():#.5}_{i}',
+                snd_tensor=gen_wav, global_step=model.step, sample_rate=hp.sample_rate)
 
 
         return mel_loss
