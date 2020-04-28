@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from typing import Tuple
-
+import os
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
@@ -80,17 +80,9 @@ class VocTrainer:
                       f'| {speed:#.2} steps/s | Step: {k}k | '
 
                 if step % hp.voc_gen_samples_every == 0:
-                    mel_loss, gen_wavs = self.generate_samples(model, session)
-                    self.writer.add_scalar('Loss/gen_mel', mel_loss, model.get_step())
-
-                    if len(self.top_k_models) < hp.voc_keep_top_k:
-                        self.top_k_models.append((mel_loss, gen_wavs, model.get_step()))
-                        self.top_k_models.sort(key=lambda t: t[0])
-                    elif self.top_k_models[-1][0] > mel_loss:
-                        self.top_k_models.sort(key=lambda t: t[0])
-                        self.top_k_models[-1] = (mel_loss, gen_wavs, model.get_step())
-                        #save_checkpoint('voc', self.paths, model, optimizer,
-                        #                name=f'wave_top_{i}', is_silent=True)
+                    mel_loss, gen_wav = self.generate_samples(model, session)
+                    self.writer.add_scalar('Loss/val_mel_l1', mel_loss, model.get_step())
+                    self.save_top_models(mel_loss, gen_wav, model)
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
@@ -130,6 +122,10 @@ class VocTrainer:
 
     @ignore_exception
     def generate_samples(self, model, session) -> Tuple[float, list]:
+        """
+        Generates audio samples to cherry-pick models. To evaluate audio quality
+        we calculate the l1 distance between mels of predictions and targets.
+        """
         model.eval()
         mel_losses = []
         gen_wavs = []
@@ -163,9 +159,32 @@ class VocTrainer:
                 tag=f'Validation_Samples/generated_{i}',
                 snd_tensor=gen_wav, global_step=model.step, sample_rate=hp.sample_rate)
 
-        for i, mel_loss, m_step in enumerate(self.top_k_models):
+        for i, (mel_loss, g_wav, m_step) in enumerate(self.top_k_models, 1):
             self.writer.add_audio(
                 tag=f'Top_K_Models/generated_top_{i}',
-                snd_tensor=gen_wavs[0], global_step=m_step, sample_rate=hp.sample_rate)
+                snd_tensor=g_wav, global_step=m_step, sample_rate=hp.sample_rate)
 
-        return sum(mel_losses) / len(mel_losses), gen_wavs
+        return sum(mel_losses) / len(mel_losses), gen_wavs[0]
+
+    def save_top_models(self, mel_loss, gen_wav, model):
+        """ Keeps track of top k models saves them according to their current rank """
+        print()
+        for j, (l, g, m) in enumerate(self.top_k_models):
+            print(f'{j} {l} {m}')
+        if len(self.top_k_models) < hp.voc_keep_top_k or mel_loss < self.top_k_models[-1][0]:
+            self.top_k_models.append((mel_loss, gen_wav, model.get_step()))
+            rank_key = self.top_k_models.__getitem__
+            new_ranking = sorted(range(len(self.top_k_models)), key=rank_key)
+            for old_rank, new_rank in enumerate(new_ranking):
+                if new_rank + 1 > hp.voc_keep_top_k:
+                    continue
+                m_step = self.top_k_models[old_rank][2] // 1000
+                old_file = self.paths.voc_checkpoints / f'wave_top_{old_rank + 1}_step{m_step}K_weights.pyt'
+                new_file = self.paths.voc_checkpoints / f'wave_top_{new_rank + 1}_step{m_step}K_weights.pyt'
+                print(f'{old_rank} {new_rank} {old_file.name} {new_file.name}')
+                if os.path.exists(old_file):
+                    os.rename(old_file, new_file)
+                else:
+                    model.save(new_file)
+            self.top_k_models.sort(key=lambda t: t[0])
+            self.top_k_models = self.top_k_models[:hp.voc_keep_top_k]
