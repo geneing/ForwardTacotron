@@ -16,6 +16,7 @@ class Paths:
 
         # WaveRNN/Vocoder Paths
         self.voc_checkpoints = self.base/'checkpoints'/f'{voc_id}.wavernn'
+        self.voc_top_k = self.voc_checkpoints/'top_k_models'
         self.voc_latest_weights = self.voc_checkpoints/'latest_weights.pyt'
         self.voc_latest_optim = self.voc_checkpoints/'latest_optim.pyt'
         self.voc_output = self.base/'model_outputs'/f'{voc_id}.wavernn'
@@ -51,6 +52,7 @@ class Paths:
         os.makedirs(self.gta, exist_ok=True)
         os.makedirs(self.alg, exist_ok=True)
         os.makedirs(self.voc_checkpoints, exist_ok=True)
+        os.makedirs(self.voc_top_k, exist_ok=True)
         os.makedirs(self.voc_output, exist_ok=True)
         os.makedirs(self.tts_checkpoints, exist_ok=True)
         os.makedirs(self.tts_output, exist_ok=True)

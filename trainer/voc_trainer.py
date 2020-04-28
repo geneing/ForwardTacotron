@@ -13,6 +13,7 @@ from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.distribution import discretized_mix_logistic_loss
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now, decode_mu_law, label_2_float, raw_melspec
+from utils.files import unpickle_binary, pickle_binary
 
 
 class VocTrainer:
@@ -21,7 +22,11 @@ class VocTrainer:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.voc_log, comment='v1')
         self.loss_func = F.cross_entropy if hp.voc_mode == 'RAW' else discretized_mix_logistic_loss
-        self.top_k_models = []
+        path_top_k = paths.voc_top_k/'top_k.pkl'
+        if os.path.exists(path_top_k):
+            self.top_k_models = unpickle_binary(path_top_k)
+        else:
+            self.top_k_models = []
 
     def train(self, model, optimizer, train_gta=False):
         for i, session_params in enumerate(hp.voc_schedule, 1):
@@ -80,6 +85,7 @@ class VocTrainer:
                       f'| {speed:#.2} steps/s | Step: {k}k | '
 
                 if step % hp.voc_gen_samples_every == 0:
+                    stream(msg + 'generating samples...')
                     mel_loss, gen_wav = self.generate_samples(model, session)
                     self.writer.add_scalar('Loss/val_mel_l1', mel_loss, model.get_step())
                     self.save_top_models(mel_loss, gen_wav, model)
@@ -169,22 +175,29 @@ class VocTrainer:
     def save_top_models(self, mel_loss, gen_wav, model):
         """ Keeps track of top k models saves them according to their current rank """
         print()
+        print(f'mel loss {mel_loss}')
         for j, (l, g, m) in enumerate(self.top_k_models):
             print(f'{j} {l} {m}')
         if len(self.top_k_models) < hp.voc_keep_top_k or mel_loss < self.top_k_models[-1][0]:
             self.top_k_models.append((mel_loss, gen_wav, model.get_step()))
             rank_key = self.top_k_models.__getitem__
             new_ranking = sorted(range(len(self.top_k_models)), key=rank_key)
+            # rename models according to new ranking and delete excess model
             for old_rank, new_rank in enumerate(new_ranking):
-                if new_rank + 1 > hp.voc_keep_top_k:
-                    continue
-                m_step = self.top_k_models[old_rank][2] // 1000
-                old_file = self.paths.voc_checkpoints / f'wave_top_{old_rank + 1}_step{m_step}K_weights.pyt'
-                new_file = self.paths.voc_checkpoints / f'wave_top_{new_rank + 1}_step{m_step}K_weights.pyt'
+                m_step = self.top_k_models[old_rank][2]
+                old_file = self.paths.voc_top_k / f'wave_top_{old_rank + 1}_step{m_step}_weights.pyt'
+                new_file = self.paths.voc_top_k / f'wave_top_{new_rank + 1}_step{m_step}_weights.pyt'
                 print(f'{old_rank} {new_rank} {old_file.name} {new_file.name}')
                 if os.path.exists(old_file):
-                    os.rename(old_file, new_file)
+                    if new_rank + 1 > hp.voc_keep_top_k:
+                        print(f'removing {old_file.name}')
+                        os.remove(old_file)
+                    else:
+                        print(f'renaming {old_file.name} {new_file.name}')
+                        os.rename(old_file, new_file)
                 else:
+                    print(f'saving {new_file}')
                     model.save(new_file)
             self.top_k_models.sort(key=lambda t: t[0])
             self.top_k_models = self.top_k_models[:hp.voc_keep_top_k]
+            pickle_binary(self.top_k_models, self.paths.voc_top_k/'top_k.pkl')
