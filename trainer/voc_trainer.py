@@ -13,7 +13,7 @@ from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.distribution import discretized_mix_logistic_loss
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now, decode_mu_law, label_2_float, raw_melspec
-from utils.files import unpickle_binary, pickle_binary
+from utils.files import unpickle_binary, pickle_binary, get_files
 
 
 class VocTrainer:
@@ -88,7 +88,7 @@ class VocTrainer:
                     stream(msg + 'generating samples...')
                     mel_loss, gen_wav = self.generate_samples(model, session)
                     self.writer.add_scalar('Loss/val_mel_l1', mel_loss, model.get_step())
-                    self.save_top_models(mel_loss, gen_wav, model)
+                    self.track_top_models(mel_loss, gen_wav, model)
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
@@ -165,39 +165,34 @@ class VocTrainer:
                 tag=f'Validation_Samples/generated_{i}',
                 snd_tensor=gen_wav, global_step=model.step, sample_rate=hp.sample_rate)
 
-        for i, (mel_loss, g_wav, m_step) in enumerate(self.top_k_models, 1):
-            self.writer.add_audio(
-                tag=f'Top_K_Models/generated_top_{i}',
-                snd_tensor=g_wav, global_step=m_step, sample_rate=hp.sample_rate)
-
         return sum(mel_losses) / len(mel_losses), gen_wavs[0]
 
-    def save_top_models(self, mel_loss, gen_wav, model):
-        """ Keeps track of top k models saves them according to their current rank """
+    def track_top_models(self, mel_loss, gen_wav, model):
+        """ Keeps track of top k models and saves them according to their current rank """
         print()
         print(f'mel loss {mel_loss}')
-        for j, (l, g, m) in enumerate(self.top_k_models):
-            print(f'{j} {l} {m}')
+        for j, (l, g, m, m_n) in enumerate(self.top_k_models):
+            print(f'{j} {l} {m} {m_n}')
         if len(self.top_k_models) < hp.voc_keep_top_k or mel_loss < self.top_k_models[-1][0]:
-            self.top_k_models.append((mel_loss, gen_wav, model.get_step()))
-            rank_key = self.top_k_models.__getitem__
-            new_ranking = sorted(range(len(self.top_k_models)), key=rank_key)
-            # rename models according to new ranking and delete excess model
-            for old_rank, new_rank in enumerate(new_ranking):
-                m_step = self.top_k_models[old_rank][2]
-                old_file = self.paths.voc_top_k / f'wave_top_{old_rank + 1}_step{m_step}_weights.pyt'
-                new_file = self.paths.voc_top_k / f'wave_top_{new_rank + 1}_step{m_step}_weights.pyt'
-                print(f'{old_rank} {new_rank} {old_file.name} {new_file.name}')
-                if os.path.exists(old_file):
-                    if new_rank + 1 > hp.voc_keep_top_k:
-                        print(f'removing {old_file.name}')
-                        os.remove(old_file)
-                    else:
-                        print(f'renaming {old_file.name} {new_file.name}')
-                        os.rename(old_file, new_file)
-                else:
-                    print(f'saving {new_file}')
-                    model.save(new_file)
+            m_step = model.get_step()
+            model_name = f'model_loss{mel_loss:#0.5}_step{m_step}_weights.pyt'
+            self.top_k_models.append((mel_loss, gen_wav, model.get_step(), model_name))
             self.top_k_models.sort(key=lambda t: t[0])
             self.top_k_models = self.top_k_models[:hp.voc_keep_top_k]
+            model.save(self.paths.voc_top_k/model_name)
+            all_models = get_files(self.paths.voc_top_k, extension='pyt')
+            top_k_names = {m[-1] for m in self.top_k_models}
+            for model_file in all_models:
+                if model_file.name not in top_k_names:
+                    print(f'removing {model_file}')
+                    os.remove(model_file)
             pickle_binary(self.top_k_models, self.paths.voc_top_k/'top_k.pkl')
+
+            for i, (mel_loss, g_wav, m_step, m_name) in enumerate(self.top_k_models, 1):
+                self.writer.add_audio(
+                    tag=f'Top_K_Models/generated_top_{i}',
+                    snd_tensor=g_wav, global_step=m_step, sample_rate=hp.sample_rate)
+
+        print('sorted ranks:')
+        for j, (l, g, m, m_n) in enumerate(self.top_k_models):
+            print(f'{j} {l} {m} {m_n}')
