@@ -3,7 +3,11 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
+from torch.optim.optimizer import Optimizer
+from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard import SummaryWriter
+
+from models.forward_tacotron import ForwardTacotron
 from trainer.common import Averager, TTSSession, MaskedL1
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
@@ -11,16 +15,17 @@ from utils.dataset import get_tts_datasets
 from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now
+from utils.paths import Paths
 
 
 class ForwardTrainer:
 
-    def __init__(self, paths):
+    def __init__(self, paths: Paths) -> None:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.forward_log, comment='v1')
         self.l1_loss = MaskedL1()
 
-    def train(self, model, optimizer):
+    def train(self, model: ForwardTacotron, optimizer: Optimizer) -> None:
         for i, session_params in enumerate(hp.forward_schedule, 1):
             lr, max_step, bs = session_params
             if model.get_step() < max_step:
@@ -31,7 +36,8 @@ class ForwardTrainer:
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)
 
-    def train_session(self, model, optimizer, session):
+    def train_session(self, model: ForwardTacotron,
+                      optimizer: Optimizer, session: TTSSession) -> None:
         current_step = model.get_step()
         training_steps = session.max_step - current_step
         total_iters = len(session.train_set)
@@ -99,7 +105,7 @@ class ForwardTrainer:
             duration_avg.reset()
             print(' ')
 
-    def evaluate(self, model, val_set) -> Tuple[float, float]:
+    def evaluate(self, model: ForwardTacotron, val_set: Dataset) -> Tuple[float, float]:
         model.eval()
         m_val_loss = 0
         dur_val_loss = 0
@@ -116,7 +122,7 @@ class ForwardTrainer:
         return m_val_loss / len(val_set), dur_val_loss / len(val_set)
 
     @ignore_exception
-    def generate_plots(self, model, session):
+    def generate_plots(self, model: ForwardTacotron, session: TTSSession) -> None:
         model.eval()
         device = next(model.parameters()).device
         x, m, ids, lens, dur = session.val_sample

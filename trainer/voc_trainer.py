@@ -4,7 +4,11 @@ from typing import Tuple
 import os
 import torch
 import torch.nn.functional as F
+from torch.optim.optimizer import Optimizer
+from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard import SummaryWriter
+
+from models.fatchord_version import WaveRNN
 from trainer.common import Averager, TTSSession, VocSession
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
@@ -14,11 +18,12 @@ from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.distribution import discretized_mix_logistic_loss
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now, decode_mu_law, label_2_float, raw_melspec
 from utils.files import unpickle_binary, pickle_binary, get_files
+from utils.paths import Paths
 
 
 class VocTrainer:
 
-    def __init__(self, paths):
+    def __init__(self, paths: Paths) -> None:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.voc_log, comment='v1')
         self.loss_func = F.cross_entropy if hp.voc_mode == 'RAW' else discretized_mix_logistic_loss
@@ -28,7 +33,7 @@ class VocTrainer:
         else:
             self.top_k_models = []
 
-    def train(self, model, optimizer, train_gta=False):
+    def train(self, model: WaveRNN, optimizer: Optimizer, train_gta=False) -> None:
         for i, session_params in enumerate(hp.voc_schedule, 1):
             lr, max_step, bs = session_params
             if model.get_step() < max_step:
@@ -40,7 +45,8 @@ class VocTrainer:
                     val_set_samples=val_set_samples)
                 self.train_session(model, optimizer, session, train_gta)
 
-    def train_session(self, model, optimizer, session, train_gta):
+    def train_session(self, model: WaveRNN, optimizer: Optimizer,
+                      session: VocSession, train_gta: bool) -> None:
         current_step = model.get_step()
         training_steps = session.max_step - current_step
         total_iters = len(session.train_set)
@@ -87,7 +93,7 @@ class VocTrainer:
                 if step % hp.voc_gen_samples_every == 0:
                     stream(msg + 'generating samples...')
                     mel_loss, gen_wav = self.generate_samples(model, session)
-                    self.writer.add_scalar('Loss/val_mel_l1', mel_loss, model.get_step())
+                    self.writer.add_scalar('Loss/generated_mel_l1', mel_loss, model.get_step())
                     self.track_top_models(mel_loss, gen_wav, model)
 
                 if step % hp.voc_checkpoint_every == 0:
@@ -109,7 +115,7 @@ class VocTrainer:
             duration_avg.reset()
             print(' ')
 
-    def evaluate(self, model, val_set) -> float:
+    def evaluate(self, model: WaveRNN, val_set: Dataset) -> float:
         model.eval()
         val_loss = 0
         device = next(model.parameters()).device
@@ -127,7 +133,7 @@ class VocTrainer:
         return val_loss / len(val_set)
 
     @ignore_exception
-    def generate_samples(self, model, session) -> Tuple[float, list]:
+    def generate_samples(self, model: WaveRNN, session: VocSession) -> Tuple[float, list]:
         """
         Generates audio samples to cherry-pick models. To evaluate audio quality
         we calculate the l1 distance between mels of predictions and targets.

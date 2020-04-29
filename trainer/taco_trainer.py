@@ -2,7 +2,11 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch.optim.optimizer import Optimizer
+from torch.utils.data import Dataset
 from torch.utils.tensorboard import SummaryWriter
+
+from models.tacotron import Tacotron
 from trainer.common import Averager, TTSSession
 from utils import hparams as hp
 from utils.checkpoints import save_checkpoint
@@ -10,15 +14,16 @@ from utils.dataset import get_tts_datasets
 from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel, plot_attention
 from utils.dsp import reconstruct_waveform, rescale_mel, np_now
+from utils.paths import Paths
 
 
 class TacoTrainer:
 
-    def __init__(self, paths):
+    def __init__(self, paths: Paths) -> None:
         self.paths = paths
         self.writer = SummaryWriter(log_dir=paths.tts_log, comment='v1')
 
-    def train(self, model, optimizer):
+    def train(self, model: Tacotron, optimizer: Optimizer) -> None:
         for i, session_params in enumerate(hp.tts_schedule, 1):
             r, lr, max_step, bs = session_params
             if model.get_step() < max_step:
@@ -29,7 +34,8 @@ class TacoTrainer:
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)
 
-    def train_session(self, model, optimizer, session):
+    def train_session(self, model: Tacotron,
+                      optimizer: Optimizer, session: TTSSession) -> None:
         current_step = model.get_step()
         training_steps = session.max_step - current_step
         total_iters = len(session.train_set)
@@ -92,7 +98,7 @@ class TacoTrainer:
             duration_avg.reset()
             print(' ')
 
-    def evaluate(self, model, val_set) -> float:
+    def evaluate(self, model: Tacotron, val_set: Dataset) -> float:
         model.eval()
         val_loss = 0
         device = next(model.parameters()).device
@@ -106,7 +112,7 @@ class TacoTrainer:
         return val_loss / len(val_set)
 
     @ignore_exception
-    def generate_plots(self, model, session):
+    def generate_plots(self, model: Tacotron, session: TTSSession) -> None:
         model.eval()
         device = next(model.parameters()).device
         x, m, ids, lens = session.val_sample
