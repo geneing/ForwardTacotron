@@ -103,7 +103,7 @@ Here is what the WaveRNN tensorboard looks like:
   <img src="assets/tensorboard_wavernn.png" width="700" />
 </p>
 <p align="center">
-  <b>Figure 2:</b> Tensorboard example for training a WaveRNN model.
+  <b>Figure 3:</b> Tensorboard example for training a WaveRNN model.
 </p>
 
 
