@@ -92,9 +92,8 @@ Here is what the ForwardTacotron tensorboard looks like:
 
 - From experience I recommend starting with the standard params (RAW mode with 9 bit), which
 should start to sound good after about 300k steps.
-- Sound quality of the models varies quite a bit, so it is important to cherry-pick the right model.
-The best.
-- For cherry-picking it is best to listen to the validation sound samples in tensorboard (see below). 
+- Sound quality of the models varies quite a bit, so it is important to cherry-pick the best one.
+- For cherry-picking it is useful to listen to the validation sound samples in tensorboard (see below). 
 The sound quality of the samples is measured by an additional metric (L1 distance of mel specs).
 - The top k models according to the above metric are constantly monitored (see tensorboard example below).
 
