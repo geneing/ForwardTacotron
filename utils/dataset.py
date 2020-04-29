@@ -1,5 +1,3 @@
-import pickle
-import torch
 from torch.utils.data.sampler import Sampler
 from torch.utils.data import Dataset, DataLoader
 from utils.dsp import *
@@ -55,8 +53,9 @@ def get_vocoder_datasets(path: Path, batch_size, train_gta):
                          shuffle=False,
                          pin_memory=True)
 
-    np.random.seed(42)  # fix numpy seed to obtain the same val set every time
+    np.random.seed(42)  # fix numpy seed to obtain the same val set every time, I know its hacky
     val_set = [b for b in val_set]
+    np.random.seed()
 
     val_set_samples = DataLoader(val_dataset,
                                  batch_size=1,

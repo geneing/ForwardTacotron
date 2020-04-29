@@ -18,10 +18,10 @@ The model has following advantages:
 does not use any attention. Hence, the required memory grows linearly with text size, which makes it possible to synthesize large articles at once.
 
 
-## UPDATE (20.04.2020)
+## UPDATE (29.04.2020)
 1. Models now use phonemes, which improves audio quality and reduces pronunciation errors.
 2. Training is now running on a train / val split and can be monitored with tensorboard (see example at the bottom).
-
+3. Additional monitoring for WaveRNN that helps to cherry-pick the model.
 
 ## 🔈 Samples
 
@@ -87,6 +87,24 @@ Here is what the ForwardTacotron tensorboard looks like:
   <b>Figure 2:</b> Tensorboard example for training a ForwardTacotron model.
 </p>
 
+
+## Tips for training a WaveRNN model
+
+- From experience I recommend starting with the standard params (RAW mode with 9 bit), which
+should start to sound good after about 300k steps.
+- Sound quality of the models varies quite a bit, so it is important to cherry-pick the right model.
+The best.
+- For cherry-picking it is best to listen to the validation sound samples in tensorboard (see below). 
+The sound quality of the samples is measured by an additional metric (L1 distance of mel specs).
+- The top k models according to the above metric are constantly monitored (see tensorboard example below).
+
+Here is what the WaveRNN tensorboard looks like:
+<p align="center">
+  <img src="assets/tensorboard_wavernn.png" width="700" />
+</p>
+<p align="center">
+  <b>Figure 2:</b> Tensorboard example for training a WaveRNN model.
+</p>
 
 
 ## References
