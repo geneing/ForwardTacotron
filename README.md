@@ -95,7 +95,7 @@ should start to sound good after about 300k steps.
 - Sound quality of the models varies quite a bit, so it is important to cherry-pick the best one.
 - For cherry-picking it is useful to listen to the validation sound samples in tensorboard. 
 The sound quality of the samples is measured by an additional metric (L1 distance of mel specs).
-- The top k models according to the above metric are constantly monitored (see tensorboard example below).
+- The top k models according to the above metric are constantly monitored and checkpointed under path/to/checkpoint/top_k_models.
 
 Here is what the WaveRNN tensorboard looks like:
 <p align="center">
