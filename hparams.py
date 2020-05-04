@@ -51,7 +51,7 @@ voc_res_blocks = 10
 # Training
 
 voc_schedule = [(1e-4,  300_000,  32),        # progressive training schedule
-                (2e-5,  2_000_000,  2)]        # (lr, step, batch_size)
+                (2e-5,  2_000_000,  32)]        # (lr, step, batch_size)
 
 voc_checkpoint_every = 25_000
 voc_gen_samples_every = 1000          # how often to generate samples for cherry-picking models
