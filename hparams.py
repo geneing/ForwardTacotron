@@ -7,8 +7,8 @@ data_path = 'data/'
 
 # model ids are separate - that way you can use a new tts with an old wavernn and vice versa
 # NB: expect undefined behaviour if models were trained on different DSP settings
-voc_model_id = 'asvoice_raw'
-tts_model_id = 'asvoice_tts'
+voc_model_id = 'ljspeech_raw'
+tts_model_id = 'ljspeech_tts'
 
 # set this to True if you are only interested in WaveRNN
 ignore_tts = False
@@ -51,10 +51,10 @@ voc_res_blocks = 10
 # Training
 
 voc_schedule = [(1e-4,  300_000,  32),        # progressive training schedule
-                (2e-5,  2_000_000,  32)]        # (lr, step, batch_size)
+                (2e-5,  2_000_000,  32)]      # (lr, step, batch_size)
 
 voc_checkpoint_every = 25_000
-voc_gen_samples_every = 1000          # how often to generate samples for cherry-picking models
+voc_gen_samples_every = 5000        # how often to generate samples for cherry-picking models
 voc_gen_num_samples = 3             # number of samples to generate for cherry-picking models
 voc_keep_top_k = 3                  # how many top performing models to keep
 voc_pad = 2                         # this will pad the input so that the resnet can 'see' wider than input length
@@ -80,8 +80,8 @@ tts_lstm_dims = 512
 tts_postnet_K = 8
 tts_num_highways = 4
 tts_dropout = 0.5
-language = 'de'
-tts_cleaner_name = 'basic_cleaners'
+language = 'en'
+tts_cleaner_name = 'english_cleaners'
 tts_stop_threshold = -3.4           # Value below which audio generation ends.
                                     # For example, for a range of [-4, 4], this
                                     # will terminate the sequence at the first
