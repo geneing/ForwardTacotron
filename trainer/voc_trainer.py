@@ -97,9 +97,11 @@ class VocTrainer:
 
                 if step % hp.voc_gen_samples_every == 0:
                     stream(msg + 'generating samples...')
-                    mel_loss, gen_wav = self.generate_samples(model, session)
-                    self.writer.add_scalar('Loss/generated_mel_l1', mel_loss, model.get_step())
-                    self.track_top_models(mel_loss, gen_wav, model)
+                    gen_result = self.generate_samples(model, session)
+                    if gen_result is not None:
+                        mel_loss, gen_wav = gen_result
+                        self.writer.add_scalar('Loss/generated_mel_l1', mel_loss, model.get_step())
+                        self.track_top_models(mel_loss, gen_wav, model)
 
                 if step % hp.voc_checkpoint_every == 0:
                     ckpt_name = f'wave_step{k}K'
