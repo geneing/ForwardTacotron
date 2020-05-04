@@ -30,6 +30,11 @@ class VocTrainer:
         path_top_k = paths.voc_top_k/'top_k.pkl'
         if os.path.exists(path_top_k):
             self.top_k_models = unpickle_binary(path_top_k)
+            # log recent top models
+            for i, (mel_loss, g_wav, m_step, m_name) in enumerate(self.top_k_models, 1):
+                self.writer.add_audio(
+                    tag=f'Top_K_Models/generated_top_{i}',
+                    snd_tensor=g_wav, global_step=m_step, sample_rate=hp.sample_rate)
         else:
             self.top_k_models = []
 

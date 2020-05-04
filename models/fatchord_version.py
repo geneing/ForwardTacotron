@@ -167,7 +167,7 @@ class WaveRNN(nn.Module):
         x = F.relu(self.fc2(x))
         return self.fc3(x)
 
-    def generate(self, mels, save_path: Union[str, Path], batched, target, overlap, mu_law, silent=False):
+    def generate(self, mels, save_path: Union[str, Path, None], batched, target, overlap, mu_law, silent=False):
         self.eval()
 
         device = next(self.parameters()).device  # use same device as parameters
