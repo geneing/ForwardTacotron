@@ -4,7 +4,7 @@ we modified Tacotron to generate speech in a single forward pass using a duratio
 
 ## ForwardTacotron + MelGAN Vocoder
 
-The samples are generated with a model trained 400K steps on [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) together with the pretrained WaveRNN vocoder provided by the [MelGAN repo](https://github.com/seungwonpark/melgan).
+The samples are generated with a model trained 400K steps on [LJSpeech](https://keithito.com/LJ-Speech-Dataset/) together with the pretrained MelGAN vocoder provided by the [MelGAN repo](https://github.com/seungwonpark/melgan).
 
 <p class="text">Scientists at the CERN laboratory say they have discovered a new particle.</p> 
 
