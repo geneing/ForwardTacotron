@@ -6,7 +6,6 @@ from utils.text.symbols import phonemes
 from utils.text import text_to_sequence, clean_text
 from utils.dsp import reconstruct_waveform
 from utils import hparams as hp
-import numpy as np
 
 
 def init_hparams(hp_file):
