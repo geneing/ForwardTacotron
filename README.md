@@ -26,8 +26,7 @@ Check out the [Colab Notebook](https://colab.research.google.com/github/as-ideas
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
-The samples are generated with a model trained 100K steps on LJSpeech together with the pretrained WaveRNN vocoder
-provided by the WaveRNN repo. Both models are commited in the pretrained folder. You can try them out with the following notebook:  
+The samples are generated with a model on LJSpeech. You can try it out with the following notebook:  
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/ForwardTacotron/blob/master/notebooks/synthesize.ipynb)
 
@@ -74,7 +73,6 @@ If you want to use the [MelGAN](https://github.com/seungwonpark/melgan) vocoder,
 python gen_forward.py --input_text 'this is whatever you want it to be' melgan
 ```
 To vocode the resulting .mel files use the inference.py script from the MelGAN repo and point to the model output folder (see inference example at [MelGAN](https://github.com/seungwonpark/melgan))
-```
 
 As in the original repo you can also use a trained WaveRNN vocoder:
 ```
