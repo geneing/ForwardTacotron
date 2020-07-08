@@ -21,11 +21,10 @@ sample_rate = 22050
 n_fft = 2048
 fft_bins = n_fft // 2 + 1
 num_mels = 80
-hop_length = 275                    # 12.5ms - in line with Tacotron 2 paper
-win_length = 1100                   # 50ms - same reason as above
-fmin = 40
-min_level_db = -100
-ref_level_db = 20
+hop_length = 256                    # 12.5ms - in line with Tacotron 2 paper
+win_length = 1024                   # 50ms - same reason as above
+fmin = 0
+fmax = 8000
 bits = 9                            # bit depth of signal
 mu_law = True                       # Recommended to suppress noise if using raw bits in hp.voc_mode below
 peak_norm = False                   # Normalise to the peak of each wav file
@@ -41,7 +40,7 @@ n_val = 200                         # num validatino samples
 
 # Model Hparams
 voc_mode = 'RAW'                    # either 'RAW' (softmax on raw bits) or 'MOL' (sample from mixture of logistics)
-voc_upsample_factors = (5, 5, 11)   # NB - this needs to correctly factorise hop_length
+voc_upsample_factors = (4, 8, 8)   # NB - this needs to correctly factorise hop_length
 voc_rnn_dims = 512
 voc_fc_dims = 512
 voc_compute_dims = 128
@@ -82,7 +81,7 @@ tts_num_highways = 4
 tts_dropout = 0.5
 language = 'en'
 tts_cleaner_name = 'english_cleaners'
-tts_stop_threshold = -3.4           # Value below which audio generation ends.
+tts_stop_threshold = -11           # Value below which audio generation ends.
                                     # For example, for a range of [-4, 4], this
                                     # will terminate the sequence at the first
                                     # frame that has all values < -3.4
@@ -120,8 +119,9 @@ forward_dropout = 0.1
 
 # Training
 
-forward_schedule = [(1e-3, 10_000,  32),    # progressive training schedule
-                    (1e-4, 500_000,  32)]   # (lr, step, batch_size)
+forward_schedule = [(1e-4, 10_000,  32),    # progressive training schedule
+                    (1e-4, 300_000,  32),   # (lr, step, batch_size)
+                    (2e-5, 600_000,  32)]   # (lr, step, batch_size)
 
 forward_max_mel_len = 1250              # if you have a couple of extremely long spectrograms you might want to use this
 forward_clip_grad_norm = 1.0            # clips the gradient norm to prevent explosion - set to None if not needed

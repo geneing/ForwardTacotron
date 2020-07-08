@@ -17,7 +17,7 @@ class LengthRegulator(nn.Module):
 
     def forward(self, x, dur):
         return self.expand(x, dur)
-     
+
     @staticmethod
     def build_index(duration, x):
         duration[duration < 0] = 0
@@ -96,7 +96,6 @@ class ForwardTacotron(nn.Module):
                  highways,
                  dropout,
                  n_mels):
-
         super().__init__()
         self.rnn_dim = rnn_dim
         self.embedding = nn.Embedding(num_chars, embed_dims)

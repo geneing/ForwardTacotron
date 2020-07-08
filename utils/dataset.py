@@ -192,7 +192,7 @@ def pad1d(x, max_len):
 
 
 def pad2d(x, max_len):
-    return np.pad(x, ((0, 0), (0, max_len - x.shape[-1])), mode='constant')
+    return np.pad(x, ((0, 0), (0, max_len - x.shape[-1])), constant_values=-11.51, mode='constant')
 
 
 def collate_tts(batch, r):
@@ -211,8 +211,6 @@ def collate_tts(batch, r):
     mel_lens = torch.tensor(mel_lens)
     chars = torch.tensor(chars).long()
     mel = torch.tensor(mel)
-    # scale spectrograms to -4 <--> 4
-    mel = (mel * 8.) - 4.
     # additional durations for forward
     if len(batch[0]) > 4:
         dur = [pad1d(x[4][:max_x_len], max_x_len) for x in batch]

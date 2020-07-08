@@ -1,8 +1,9 @@
 import time
+import torch.nn.functional as F
+
 from typing import Tuple
 
 import torch
-import torch.nn.functional as F
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard import SummaryWriter
@@ -14,7 +15,7 @@ from utils.checkpoints import save_checkpoint
 from utils.dataset import get_tts_datasets
 from utils.decorators import ignore_exception
 from utils.display import stream, simple_table, plot_mel
-from utils.dsp import reconstruct_waveform, rescale_mel, np_now
+from utils.dsp import reconstruct_waveform, np_now
 from utils.paths import Paths
 
 
@@ -64,6 +65,7 @@ class ForwardTrainer:
 
                 m1_loss = self.l1_loss(m1_hat, m, lens)
                 m2_loss = self.l1_loss(m2_hat, m, lens)
+
                 dur_loss = F.l1_loss(dur_hat, dur)
 
                 loss = m1_loss + m2_loss + dur_loss
@@ -141,7 +143,6 @@ class ForwardTrainer:
         self.writer.add_figure('Ground_Truth_Aligned/linear', m1_hat_fig, model.step)
         self.writer.add_figure('Ground_Truth_Aligned/postnet', m2_hat_fig, model.step)
 
-        m1_hat, m2_hat, m = rescale_mel(m1_hat), rescale_mel(m2_hat), rescale_mel(m)
         m2_hat_wav = reconstruct_waveform(m2_hat)
         target_wav = reconstruct_waveform(m)
 
@@ -153,7 +154,6 @@ class ForwardTrainer:
             global_step=model.step, sample_rate=hp.sample_rate)
 
         m1_hat, m2_hat, dur_hat = model.generate(x[0].tolist())
-        m1_hat, m2_hat = rescale_mel(m1_hat), rescale_mel(m2_hat)
         m1_hat_fig = plot_mel(m1_hat)
         m2_hat_fig = plot_mel(m2_hat)
 
