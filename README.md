@@ -66,7 +66,7 @@ python train_forward.py
 ```
 (5) Generate Sentences with Griffin-Lim vocoder:
 ```
-python gen_forward.py --alpha 1 --input_text "this is whatever you want it to be" griffinlim
+python gen_forward.py --alpha 1 --input_text 'this is whatever you want it to be' griffinlim
 ```
 If you want to use the [MelGAN](https://github.com/seungwonpark/melgan) vocoder, you can produce .mel files with:
 ```
@@ -112,7 +112,7 @@ Here is what the ForwardTacotron tensorboard looks like:
 
 You can synthesize text using the pretrained models with
 ```
-python gen_forward.py --input_text 'Hi there!' --hp_file pretrained/pretrained_hparams.py --tts_weights pretrained/forward_400K.pyt' wavernn --voc_weights pretrained/wave_575K.pyt
+python gen_forward.py --input_text 'Hi there!' --hp_file pretrained/pretrained_hparams.py --tts_weights pretrained/forward_400K.pyt wavernn --voc_weights pretrained/wave_575K.pyt
 
 ```
 
@@ -142,6 +142,7 @@ Here is what the WaveRNN tensorboard looks like:
 
 * [https://github.com/keithito/tacotron](https://github.com/keithito/tacotron)
 * [https://github.com/fatchord/WaveRNN](https://github.com/fatchord/WaveRNN)
+* [https://github.com/seungwonpark/melgan](https://github.com/seungwonpark/melgan)
 * [https://github.com/xcmyz/LightSpeech](https://github.com/xcmyz/LightSpeech)
 
 ## Maintainers
