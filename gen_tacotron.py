@@ -112,8 +112,8 @@ if __name__ == '__main__':
     tts_model.load(tts_load_path)
 
     if input_text:
-        input_text = clean_text(input_text.strip())
-        inputs = [text_to_sequence(input_text)]
+        text = clean_text(input_text.strip())
+        inputs = [text_to_sequence(text)]
     else:
         with open('sentences.txt') as f:
             inputs = [clean_text(l.strip()) for l in f]
@@ -142,9 +142,6 @@ if __name__ == '__main__':
 
         print(f'\n| Generating {i}/{len(inputs)}')
         _, m, attention = tts_model.generate(x)
-        # Fix mel spectrogram scaling to be from 0 to 1
-        m = (m + 4) / 8
-        np.clip(m, 0, 1, out=m)
 
         if args.vocoder == 'griffinlim':
             v_type = args.vocoder
