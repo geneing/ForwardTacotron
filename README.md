@@ -26,7 +26,7 @@ Check out the [Colab Notebook](https://colab.research.google.com/github/as-ideas
 
 [Can be found here.](https://as-ideas.github.io/ForwardTacotron/)
 
-The samples are generated with a model on LJSpeech. You can try it out with the following notebook:  
+The samples are generated with a model trained on LJSpeech. You can try it out with the following notebook:  
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/as-ideas/ForwardTacotron/blob/master/notebooks/synthesize.ipynb)
 
