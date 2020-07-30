@@ -64,9 +64,9 @@ class MaskedL1(torch.nn.Module):
 
     def forward(self, x, target, lens):
         target.requires_grad = False
-        max_len = target.size(1)
+        max_len = target.size(2)
         mask = pad_mask(lens, max_len)
-        mask = mask.unsqueeze(2).expand_as(x)
+        mask = mask.unsqueeze(1).expand_as(x)
         loss = F.l1_loss(
             x * mask, target * mask, reduction='sum')
         return loss / mask.sum()
