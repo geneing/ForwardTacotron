@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import librosa
 from utils import hparams as hp
+from scipy.io.wavfile import write
 from scipy.signal import lfilter
 
 
@@ -20,8 +21,10 @@ def load_wav(path):
     return librosa.load(path, sr=hp.sample_rate)[0]
 
 
-def save_wav(x, path):
-    librosa.output.write_wav(path, x.astype(np.float32), sr=hp.sample_rate)
+def save_wav(wav, path):
+    wav_norm = wav * (32767 / max(0.01, np.max(np.abs(wav))))
+    write(path, hp.sample_rate, wav_norm.astype(np.int16))
+    #librosa.output.write_wav(path, x.astype(np.float32), sr=hp.sample_rate)
 
 
 def split_signal(x):
